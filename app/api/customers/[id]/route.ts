@@ -5,6 +5,7 @@ import { getUserFromRequest } from "@/app/api/utils/auth"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const { id } = await params;
     const user = getUserFromRequest(request)
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -12,7 +13,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const db = await getDatabase()
     const customer = await db.collection("customers").findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
     })
 
     if (!customer) {
@@ -28,6 +29,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const { id } = await params;
     const user = getUserFromRequest(request)
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -49,7 +51,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     // Check if mobile number already exists for another customer
     const existingCustomer = await db.collection("customers").findOne({
       mobile,
-      _id: { $ne: new ObjectId(params.id) },
+      _id: { $ne: new ObjectId(id) },
     })
 
     if (existingCustomer) {
@@ -57,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const result = await db.collection("customers").updateOne(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       {
         $set: {
           name: name.trim(),
@@ -81,6 +83,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const { id } = await params;
     const user = getUserFromRequest(request)
     if (!user || user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -90,7 +93,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     // Check if customer has transactions
     const transactionCount = await db.collection("transactions").countDocuments({
-      customerId: new ObjectId(params.id),
+      customerId: new ObjectId(id),
     })
 
     if (transactionCount > 0) {
@@ -103,7 +106,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     const result = await db.collection("customers").deleteOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
     })
 
     if (result.deletedCount === 0) {

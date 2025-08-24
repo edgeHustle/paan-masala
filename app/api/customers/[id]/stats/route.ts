@@ -5,13 +5,14 @@ import { getUserFromRequest } from "@/app/api/utils/auth"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const { id } = await params;
     const user = getUserFromRequest(request)
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const db = await getDatabase()
-    const customerId = new ObjectId(params.id)
+    const customerId = new ObjectId(id)
 
     // Get transaction statistics
     const stats = await db

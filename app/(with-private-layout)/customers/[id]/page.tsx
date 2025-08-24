@@ -110,40 +110,35 @@ export default function CustomerDetailPage() {
         </Link>
       </div>
 
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <Link href={`/transactions/new?customer=${customer._id}`}>
+              <Button className="w-full" variant="default">
+                <Receipt className="mr-2 h-4 w-4" />
+                New Transaction
+              </Button>
+            </Link>
+            <Link href={`/transactions?customer=${customer._id}`}>
+              <Button className="w-full bg-transparent" variant="outline">
+                View All Transactions
+              </Button>
+            </Link>
+            <Link href={`/reports/customer/${customer._id}`}>
+              <Button className="w-full bg-transparent" variant="outline">
+                Generate Report
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Customer Info */}
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Phone className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm text-muted-foreground">Mobile Number</p>
-                <p className="font-medium">{customer.mobile}</p>
-              </div>
-            </div>
-
-            {customer.address && (
-              <div className="flex items-start gap-3">
-                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="text-sm text-muted-foreground">Address</p>
-                  <p className="font-medium">{customer.address}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-3">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm text-muted-foreground">Customer Since</p>
-                <p className="font-medium">{new Date(customer.createdAt).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>
@@ -177,34 +172,40 @@ export default function CustomerDetailPage() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <Link href={`/transactions/new?customer=${customer._id}`}>
-              <Button className="w-full" variant="default">
-                <Receipt className="mr-2 h-4 w-4" />
-                New Transaction
-              </Button>
-            </Link>
-            <Link href={`/transactions?customer=${customer._id}`}>
-              <Button className="w-full bg-transparent" variant="outline">
-                View All Transactions
-              </Button>
-            </Link>
-            <Link href={`/reports/customer/${customer._id}`}>
-              <Button className="w-full bg-transparent" variant="outline">
-                Generate Report
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Contact Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-3">
+              <Phone className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Mobile Number</p>
+                <p className="font-medium">{customer.mobile}</p>
+              </div>
+            </div>
+
+            {customer.address && (
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Address</p>
+                  <p className="font-medium">{customer.address}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-3">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="text-sm text-muted-foreground">Customer Since</p>
+                <p className="font-medium">{new Date(customer.createdAt).toLocaleDateString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Login Credentials */}
       <Card className="bg-muted/50">
