@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDatabase } from "@/app/api/utils/mongodb"
-import { getUserFromRequest } from "@/app/api/utils/auth"
+import { getUserFromRequest, User } from "@/app/api/utils/auth"
 import bcrypt from "bcryptjs"
 
 export async function GET(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
+    const user = getUserFromRequest(request) as User;
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
+    const user = getUserFromRequest(request) as User;
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

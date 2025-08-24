@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { ObjectId } from "mongodb"
 import { getDatabase } from "@/app/api/utils/mongodb"
-import { getUserFromRequest } from "@/app/api/utils/auth"
+import { getUserFromRequest, User } from "@/app/api/utils/auth"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = await params;
-    const user = getUserFromRequest(request)
+    const user = getUserFromRequest(request) as User;
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = await params;
-    const user = getUserFromRequest(request)
+    const user = getUserFromRequest(request) as User;
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -84,7 +84,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = await params;
-    const user = getUserFromRequest(request)
+    const user = getUserFromRequest(request) as User;
     if (!user || user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }

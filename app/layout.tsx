@@ -33,8 +33,8 @@ export default function RootLayout({
       </head>
       <body className="font-sans">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          {children}
           <Toaster />
+          {children}
         </ThemeProvider>
       </body>
     </html>

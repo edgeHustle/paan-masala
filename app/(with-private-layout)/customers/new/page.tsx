@@ -11,6 +11,7 @@ import { Textarea } from "@/app/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Alert, AlertDescription } from "@/app/components/ui/alert"
 import { ArrowLeft, Loader2, User } from "lucide-react"
+import { useToast } from "@/app/hooks/use-toast"
 import Link from "next/link"
 
 const customerSchema = yup.object({
@@ -28,6 +29,7 @@ export default function NewCustomerPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
+  const { toast } = useToast();
 
   const {
     register,
@@ -49,11 +51,12 @@ export default function NewCustomerPage() {
       })
 
       const result = await response.json()
-
+      console.log(result)
       if (!response.ok) {
-        throw new Error(result.error || "Failed to create customer")
+        toast({ title: "Error", description: result.error || "Failed to create customer" });
       }
 
+      toast({ title: "Customer created successfully", description: `#${result.serialNumber} ${result.name}` });
       router.push("/customers")
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to create customer")
