@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, User, Phone } from "lucide-react"
+import { Loader2, User, Phone, EyeOff, Eye } from "lucide-react"
 import PublicLayout from "@/components/layouts/public-layout"
 
 export default function CustomerLogin() {
-  const [serialNumber, setSerialNumber] = useState("")
+  const [serialNumber, setSerialNumber] = useState("");
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const router = useRouter()
@@ -32,7 +34,7 @@ export default function CustomerLogin() {
       const response = await fetch("/api/auth/customer-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serialNumber: serialNumber.trim() }),
+        body: JSON.stringify({ serialNumber: serialNumber.trim(), password: password }),
       })
 
       const data = await response.json()
@@ -76,9 +78,39 @@ export default function CustomerLogin() {
                   placeholder="Enter your serial number (e.g., 123)"
                   value={serialNumber}
                   onChange={(e) => setSerialNumber(e.target.value)}
-                  className="h-12 text-lg text-center font-mono"
+                  className="h-12 text-lg font-mono"
                   disabled={isLoading}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    placeholder="Enter your password"
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-12 text-lg font-mono pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-emerald-600" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-emerald-600" />
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {error && (
