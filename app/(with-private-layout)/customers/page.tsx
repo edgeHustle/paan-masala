@@ -95,43 +95,6 @@ export default function CustomersPage() {
         </CardContent>
       </Card>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <User className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Customers</p>
-                <p className="text-2xl font-bold">{customers.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Search className="h-5 w-5 text-secondary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Search Results</p>
-                <p className="text-2xl font-bold">{filteredCustomers.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Plus className="h-5 w-5 text-accent" />
-              <div>
-                <p className="text-sm text-muted-foreground">Next Serial</p>
-                <p className="text-2xl font-bold">{customers.length + 1}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* Customer List */}
       <div className="space-y-4">
         {filteredCustomers.length === 0 ? (
