@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/app/components/ui/badge"
 import type { Transaction } from "../page"
 import { Separator } from "@radix-ui/react-separator"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/app/components/ui/card"
 
 export default function TransactionsPage() {
     const params = useParams();

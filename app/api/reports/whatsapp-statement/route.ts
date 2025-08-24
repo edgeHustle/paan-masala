@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectToDatabase } from "@/lib/mongodb"
-import { verifyToken } from "@/lib/auth"
+import { connectToDatabase } from "@/app/api/utils/mongodb"
+import { verifyToken } from "@/app/api/utils/auth"
 
 export async function POST(request: NextRequest) {
   try {

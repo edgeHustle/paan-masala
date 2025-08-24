@@ -3,8 +3,8 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/app/components/ui/button"
+import { Card, CardContent } from "@/app/components/ui/card"
 import { Home, Users, Package, Receipt, FileText, LogOut, Menu, X } from "lucide-react"
 import Link from "next/link"
 

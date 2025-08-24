@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Card, CardContent } from "@/app/components/ui/card"
+import { Button } from "@/app/components/ui/button"
+import { Input } from "@/app/components/ui/input"
+import { Badge } from "@/app/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select"
 import { Search, Package, Plus, Minus, X } from "lucide-react"
 
 interface Item {
@@ -209,9 +209,8 @@ export default function ItemSelector({ onSelectionChange, selectedItems = [] }: 
           return (
             <Card
               key={item._id}
-              className={`cursor-pointer transition-all hover:shadow-md ${
-                quantity > 0 ? "ring-2 ring-primary bg-primary/5" : ""
-              }`}
+              className={`cursor-pointer transition-all hover:shadow-md ${quantity > 0 ? "ring-2 ring-primary bg-primary/5" : ""
+                }`}
               onClick={() => addItem(item)}
             >
               <CardContent className="p-3">

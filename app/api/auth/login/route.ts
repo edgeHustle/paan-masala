@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectToDatabase } from "@/lib/mongodb"
-import { comparePassword, generateToken } from "@/lib/auth"
+import { connectToDatabase } from "@/app/api/utils/mongodb"
+import { comparePassword, generateToken } from "@/app/api/utils/auth"
 
 export async function POST(request: NextRequest) {
   try {

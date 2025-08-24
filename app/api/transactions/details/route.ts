@@ -1,4 +1,4 @@
-import { connectToDatabase } from "@/lib/mongodb"
+import { connectToDatabase } from "@/app/api/utils/mongodb"
 import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server"
 

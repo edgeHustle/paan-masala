@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { connectToDatabase } from "@/lib/mongodb"
-import { verifyToken } from "@/lib/auth"
+import { connectToDatabase } from "@/app/api/utils/mongodb"
+import { verifyToken } from "@/app/api/utils/auth"
 
 export async function GET(request: NextRequest) {
   try {
@@ -74,8 +74,8 @@ export async function GET(request: NextRequest) {
             </thead>
             <tbody>
               ${transactions
-                .map(
-                  (transaction) => `
+        .map(
+          (transaction) => `
                 <tr>
                   <td>${new Date(transaction.createdAt).toLocaleDateString()}</td>
                   <td>${transaction.items.map((item) => `${item.name} (${item.quantity})`).join(", ")}</td>
@@ -84,8 +84,8 @@ export async function GET(request: NextRequest) {
                   <td>₹${transaction.remainingAmount}</td>
                 </tr>
               `,
-                )
-                .join("")}
+        )
+        .join("")}
               <tr class="total">
                 <td colspan="2"><strong>Total Outstanding</strong></td>
                 <td><strong>₹${transactions.reduce((sum, t) => sum + t.totalAmount, 0)}</strong></td>

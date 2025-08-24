@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { ObjectId } from "mongodb"
-import { getDatabase } from "@/lib/mongodb"
-import { getUserFromRequest } from "@/lib/auth"
+import { getDatabase } from "@/app/api/utils/mongodb"
+import { getUserFromRequest } from "@/app/api/utils/auth"
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -33,10 +33,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       stats.length > 0
         ? stats[0]
         : {
-            totalTransactions: 0,
-            totalAmount: 0,
-            lastTransactionDate: null,
-          }
+          totalTransactions: 0,
+          totalAmount: 0,
+          lastTransactionDate: null,
+        }
 
     return NextResponse.json({
       totalTransactions: result.totalTransactions,
