@@ -1,35 +1,35 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { ObjectId } from "mongodb"
-import { getDatabase } from "@/lib/mongodb"
-import { getUserFromRequest } from "@/lib/auth"
-import { format } from "date-fns"
+import { type NextRequest, NextResponse } from "next/server";
+import { ObjectId } from "mongodb";
+import { getDatabase } from "@/lib/mongodb";
+import { getUserFromRequest } from "@/lib/auth";
+import { format } from "date-fns";
+import puppeteer from "puppeteer";
 
 export async function GET(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
+    const user = await getUserFromRequest(request);
     if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const customerId = searchParams.get("customerId")
-    const from = searchParams.get("from")
-    const to = searchParams.get("to")
+    const { searchParams } = new URL(request.url);
+    const customerId = searchParams.get("customerId");
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
 
     if (!customerId || !from || !to) {
-      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 })
+      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
     }
 
-    const db = await getDatabase()
+    const db = await getDatabase();
 
-    // Get customer and transactions
-    const customer = await db.collection("customers").findOne({ _id: new ObjectId(customerId) })
+    const customer = await db.collection("customers").findOne({ _id: new ObjectId(customerId) });
     if (!customer) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 })
+      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
     }
 
-    const fromDate = new Date(from)
-    const toDate = new Date(to)
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
 
     const transactions = await db
       .collection("transactions")
@@ -41,35 +41,37 @@ export async function GET(request: NextRequest) {
         },
       })
       .sort({ createdAt: -1 })
-      .toArray()
+      .toArray();
 
-    // Calculate totals
-    const totalAmount = transactions.reduce((sum, t) => sum + t.totalAmount, 0)
-    const totalAdvance = transactions.reduce((sum, t) => sum + (t.advancePayment || 0), 0)
-    const remainingAmount = transactions.reduce((sum, t) => sum + t.remainingAmount, 0)
+    const totalAmount = transactions.reduce((sum, t) => sum + t.totalAmount, 0);
+    const totalAdvance = transactions.reduce((sum, t) => sum + (t.advancePayment || 0), 0);
+    const remainingAmount = transactions.reduce((sum, t) => sum + t.remainingAmount, 0);
 
-    // Generate HTML for PDF
     const html = generatePDFHTML({
       customer,
       transactions,
       dateRange: { from: fromDate, to: toDate },
       totals: { totalAmount, totalAdvance, remainingAmount },
-    })
+    });
 
-    // In a real implementation, you would use a PDF generation library like Puppeteer
-    // For now, we'll return the HTML that can be converted to PDF client-side
-    return new NextResponse(html, {
+    // Generate PDF using Puppeteer
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "networkidle0" });
+    const pdfBuffer = await page.pdf({ format: "A4" });
+    await browser.close();
+
+    const filename = `statement-${customer.serialNumber}-${format(fromDate, "yyyy-MM-dd")}.pdf`;
+
+    return new NextResponse(pdfBuffer, {
       headers: {
-        "Content-Type": "text/html",
-        "Content-Disposition": `attachment; filename="statement-${customer.serialNumber}-${format(
-          fromDate,
-          "yyyy-MM-dd",
-        )}.html"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
       },
-    })
+    });
   } catch (error) {
-    console.error("Error generating PDF:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error generating PDF:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -79,10 +81,10 @@ function generatePDFHTML({
   dateRange,
   totals,
 }: {
-  customer: any
-  transactions: any[]
-  dateRange: { from: Date; to: Date }
-  totals: { totalAmount: number; totalAdvance: number; remainingAmount: number }
+  customer: any;
+  transactions: any[];
+  dateRange: { from: Date; to: Date };
+  totals: { totalAmount: number; totalAdvance: number; remainingAmount: number };
 }) {
   return `
 <!DOCTYPE html>
@@ -227,14 +229,13 @@ function generatePDFHTML({
             <strong>Mobile:</strong>
             <span>${customer.mobile}</span>
         </div>
-        ${
-          customer.address
-            ? `<div class="info-row">
+        ${customer.address
+      ? `<div class="info-row">
             <strong>Address:</strong>
             <span>${customer.address}</span>
         </div>`
-            : ""
-        }
+      : ""
+    }
         <div class="info-row">
             <strong>Statement Period:</strong>
             <span>${format(dateRange.from, "dd/MM/yyyy")} to ${format(dateRange.to, "dd/MM/yyyy")}</span>
@@ -262,49 +263,47 @@ function generatePDFHTML({
         </div>
     </div>
 
-    ${
-      totals.remainingAmount > 0
-        ? `<div class="outstanding">
+    ${totals.remainingAmount > 0
+      ? `<div class="outstanding">
         <div>Outstanding Amount</div>
         <div class="outstanding-amount">₹${totals.remainingAmount.toLocaleString()}</div>
     </div>`
-        : ""
+      : ""
     }
 
     <div class="transactions">
         <h3>Transaction Details</h3>
         ${transactions
-          .map(
-            (transaction) => `
+      .map(
+        (transaction) => `
             <div class="transaction">
                 <div class="transaction-header">
                     <div class="transaction-date">${format(new Date(transaction.createdAt), "dd/MM/yyyy HH:mm")}</div>
                     <div class="transaction-amount">₹${transaction.totalAmount.toFixed(2)}</div>
                 </div>
-                ${
-                  transaction.advancePayment > 0
-                    ? `<div style="color: #059669; font-size: 14px; margin-bottom: 8px;">
+                ${transaction.advancePayment > 0
+            ? `<div style="color: #059669; font-size: 14px; margin-bottom: 8px;">
                     Advance Payment: ₹${transaction.advancePayment.toFixed(2)} | 
                     Remaining: ₹${transaction.remainingAmount.toFixed(2)}
                 </div>`
-                    : ""
-                }
+            : ""
+          }
                 <div class="items-list">
                     ${transaction.items
-                      .map(
-                        (item: any) => `
+            .map(
+              (item: any) => `
                         <div class="item">
                             <span>${item.name} x${item.quantity}${item.isCustom ? " (Custom)" : ""}</span>
                             <span>₹${(item.price * item.quantity).toFixed(2)}</span>
                         </div>
-                    `,
-                      )
-                      .join("")}
+                    `
+            )
+            .join("")}
                 </div>
             </div>
-        `,
-          )
-          .join("")}
+        `
+      )
+      .join("")}
     </div>
 
     <div class="footer">
@@ -313,5 +312,5 @@ function generatePDFHTML({
     </div>
 </body>
 </html>
-  `
+  `;
 }
