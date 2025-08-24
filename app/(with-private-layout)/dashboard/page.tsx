@@ -9,13 +9,21 @@ import { Badge } from "@/app/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
 import { Transaction } from "../transactions/page"
+import { WeeklyTransactionsChart } from "./WeeklyTransactionsChart"
+import { PaidVsPendingChart } from "./PaidVsPendingChart"
+import { TopCustomersChart } from "./TopCustomersChart"
+import { WeeklyRevenueSplitChart } from "./WeeklyRevenueSplitChart"
 
 interface DashboardStats {
   totalCustomers: number
   totalItems: number
   todayTransactions: number
   monthlyRevenue: number,
-  recentTransactions: Transaction[]
+  recentTransactions: Transaction[],
+  weeklyTxnCounts: any[],
+  paidVsPending: any[],
+  topCustomers: any[],
+  weeklyRevenueChart: any[],
 }
 
 export default function DashboardPage() {
@@ -24,7 +32,11 @@ export default function DashboardPage() {
     totalItems: 0,
     todayTransactions: 0,
     monthlyRevenue: 0,
-    recentTransactions: []
+    recentTransactions: [],
+    weeklyTxnCounts: [],
+    paidVsPending: [],
+    topCustomers: [],
+    weeklyRevenueChart: []
   })
   const router = useRouter();
 
@@ -132,6 +144,7 @@ export default function DashboardPage() {
         </DropdownMenu>
       </div>
 
+      {/* Stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         {[...cards].map((card, index) => (
           <Card key={index} className="flex flex-col justify-between">
@@ -147,6 +160,13 @@ export default function DashboardPage() {
         ))}
       </div>
 
+      {/* Visualization */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <PaidVsPendingChart data={stats.paidVsPending} />
+        <TopCustomersChart data={stats.topCustomers} />
+        <WeeklyRevenueSplitChart data={stats.weeklyRevenueChart} />
+        <WeeklyTransactionsChart data={stats.weeklyTxnCounts} />
+      </div>
 
       {/* Recent Activity */}
       <Card>
