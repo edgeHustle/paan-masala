@@ -95,7 +95,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div>
+      <div className="w-full">
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between p-4 border-b bg-card">
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
