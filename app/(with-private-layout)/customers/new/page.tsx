@@ -118,6 +118,7 @@ export default function NewCustomerPage() {
                 id="mobile"
                 type="tel"
                 placeholder="Enter 10-digit mobile number"
+                maxLength={10}
                 {...register("mobile")}
                 className={errors.mobile ? "border-destructive" : ""}
               />
