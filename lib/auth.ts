@@ -12,10 +12,11 @@ export interface User {
 }
 
 export interface Customer {
-  _id: string
-  serialNumber: number
-  name: string
-  mobile: string
+  _id: string;
+  serialNumber: number;
+  name: string;
+  mobile: string;
+  type: string;
 }
 
 export function generateToken(payload: User | Customer, type: "staff" | "customer"): string {

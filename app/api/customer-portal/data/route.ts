@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/mongodb"
-import { verifyToken } from "@/lib/auth"
+import { Customer, verifyToken } from "@/lib/auth"
+import { ObjectId } from "mongodb";
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token) as Customer;
     if (!decoded || decoded.type !== "customer") {
       return NextResponse.json({ error: "Invalid access" }, { status: 401 })
     }
@@ -28,22 +29,21 @@ export async function GET(request: NextRequest) {
     // Get customer transactions
     const transactions = await db
       .collection("transactions")
-      .find({ customerId: customer._id.toString() })
+      .find({ customerId: new ObjectId(customer._id) })
       .sort({ createdAt: -1 })
-      .limit(20)
       .toArray()
 
     // Calculate stats
     const stats = await db
       .collection("transactions")
       .aggregate([
-        { $match: { customerId: customer._id.toString() } },
+        { $match: { customerId: new ObjectId(customer._id) } },
         {
           $group: {
             _id: null,
             totalTransactions: { $sum: 1 },
             totalAmount: { $sum: "$totalAmount" },
-            totalAdvance: { $sum: "$advanceAmount" },
+            totalAdvance: { $sum: "$advancePayment" },
             outstandingAmount: { $sum: "$remainingAmount" },
           },
         },
