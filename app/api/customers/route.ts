@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
 import { getUserFromRequest } from "@/lib/auth"
+import bcrypt from "bcryptjs"
 
 export async function GET(request: NextRequest) {
   try {
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
       serialNumber: nextSerialNumber,
       name: name.trim(),
       mobile: mobile.trim(),
+      password: await bcrypt.hash(mobile.trim(), 12),
       address: address?.trim() || "",
       createdAt: new Date(),
     }
