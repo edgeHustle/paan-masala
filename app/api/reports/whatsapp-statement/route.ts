@@ -4,13 +4,14 @@ import { verifyToken } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
+    const { serialNumber, from, to } = await request.json();
     const token = request.cookies.get("token")?.value
     if (!token) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
     const decoded = verifyToken(token)
-    if (!decoded || decoded.role !== "customer") {
+    if (!decoded || decoded.role !== "admin") {
       return NextResponse.json({ error: "Invalid access" }, { status: 401 })
     }
 
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     // Get customer data
     const customer = await db.collection("customers").findOne({
-      serialNumber: decoded.serialNumber,
+      serialNumber: serialNumber,
     })
 
     if (!customer) {
@@ -54,12 +55,12 @@ export async function POST(request: NextRequest) {
 
 📋 *Recent Transactions:*
 ${transactions
-  .slice(0, 5)
-  .map(
-    (t) =>
-      `• ${new Date(t.createdAt).toLocaleDateString()} - ₹${t.totalAmount} ${t.remainingAmount > 0 ? `(₹${t.remainingAmount} pending)` : "(Paid)"}`,
-  )
-  .join("\n")}
+        .slice(0, 5)
+        .map(
+          (t) =>
+            `• ${new Date(t.createdAt).toLocaleDateString()} - ₹${t.totalAmount} ${t.remainingAmount > 0 ? `(₹${t.remainingAmount} pending)` : "(Paid)"}`,
+        )
+        .join("\n")}
 
 ${transactions.length > 5 ? `\n... and ${transactions.length - 5} more transactions` : ""}
 
@@ -68,9 +69,9 @@ Thank you for your business! 🙏
 
     // In production, integrate with WhatsApp Business API
     // For now, we'll create a WhatsApp URL
-    const whatsappUrl = `https://wa.me/${customer.mobile.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`
+    const whatsappUrl = `https://wa.me/${'7575089880'.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`
 
-    console.log("whatsappUrl>>>>",whatsappUrl)
+    console.log("whatsappUrl>>>>", whatsappUrl)
     // Log the WhatsApp send (in production, actually send via API)
     console.log("WhatsApp message would be sent to:", customer.mobile)
     console.log("Message:", message)

@@ -4,13 +4,13 @@ import { verifyToken } from "@/lib/auth"
 
 export async function GET(request: NextRequest) {
   try {
-    const token = request.cookies.get("token")?.value
+    const token = request.cookies.get("token")?.value;
     if (!token) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const decoded = verifyToken(token)
-    if (!decoded || decoded.role !== "customer") {
+    const decoded = verifyToken(token);
+    if (!decoded || decoded.type !== "customer") {
       return NextResponse.json({ error: "Invalid access" }, { status: 401 })
     }
 

@@ -40,13 +40,14 @@ async function seedInitialData() {
       createdAt: new Date(),
     })
 
-    // Create sample customers
-    const customers = [
+    // Create sample customers (with password = hashed mobile)
+    const customers = await Promise.all([
       {
         serialNumber: 1,
-        name: "Rajesh Kumar",
-        mobile: "9876543210",
+        name: "Krunal Bapodara",
+        mobile: "7984603595",
         address: "123 Main Street, City",
+        password: await bcrypt.hash("7984603595", 12),
         createdAt: new Date(),
       },
       {
@@ -54,6 +55,7 @@ async function seedInitialData() {
         name: "Priya Sharma",
         mobile: "9876543211",
         address: "456 Park Avenue, City",
+        password: await bcrypt.hash("9876543211", 12),
         createdAt: new Date(),
       },
       {
@@ -61,9 +63,10 @@ async function seedInitialData() {
         name: "Amit Patel",
         mobile: "9876543212",
         address: "789 Garden Road, City",
+        password: await bcrypt.hash("9876543212", 12),
         createdAt: new Date(),
       },
-    ]
+    ])
 
     await db.collection("customers").insertMany(customers)
 

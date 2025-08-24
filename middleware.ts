@@ -4,7 +4,6 @@ import { verifyToken } from "@/lib/auth"
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  console.log(pathname, ">>>>>pathname")
 
   // Public routes that don't require authentication
   const publicRoutes = ["/", "/login", "/customer-login"]
@@ -15,13 +14,11 @@ export function middleware(request: NextRequest) {
 
   // Get token from cookie or Authorization header
   const token = request.cookies.get("token")?.value || request.headers.get("authorization")?.replace("Bearer ", "")
-  console.log(token, ">>>>>token")
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
   const decoded = verifyToken(token)
-  console.log(decoded, ">>>>>decoded")
   if (!decoded) {
     // return NextResponse.redirect(new URL("/login", request.url))
   }

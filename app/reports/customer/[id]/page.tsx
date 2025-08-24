@@ -85,11 +85,12 @@ export default function CustomerReportPage() {
     setIsSendingWhatsApp(true)
 
     try {
-      const response = await fetch("/api/reports/whatsapp", {
+      const response = await fetch("/api/reports/whatsapp-statement", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId: customer._id,
+          serialNumber: customer.serialNumber,
           from: dateRange.from.toISOString(),
           to: dateRange.to.toISOString(),
         }),
