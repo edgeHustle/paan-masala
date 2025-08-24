@@ -40,7 +40,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background lg:flex">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden" onClick={() => setSidebarOpen(false)} />
@@ -48,9 +48,8 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } lg:static lg:inset-0`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:static lg:inset-0`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -96,7 +95,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div>
         {/* Mobile header */}
         <div className="lg:hidden flex items-center justify-between p-4 border-b bg-card">
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>

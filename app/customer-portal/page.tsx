@@ -14,7 +14,6 @@ import {
   Calendar,
   IndianRupee,
   Download,
-  MessageCircle,
   TrendingUp,
   Clock,
   LogOut,
@@ -98,19 +97,6 @@ export default function CustomerPortal() {
       }
     } catch (error) {
       console.error("Download failed:", error)
-    }
-  }
-
-  const handleWhatsAppStatement = async () => {
-    try {
-      const response = await fetch("/api/customer-portal/whatsapp-statement", {
-        method: "POST",
-      })
-      if (response.ok) {
-        alert("Statement sent to your WhatsApp!")
-      }
-    } catch (error) {
-      console.error("WhatsApp send failed:", error)
     }
   }
 
@@ -249,10 +235,6 @@ export default function CustomerPortal() {
                 <Download className="w-4 h-4 mr-2" />
                 Download Statement
               </Button>
-              <Button onClick={handleWhatsAppStatement} variant="outline" className="flex-1 bg-transparent">
-                <MessageCircle className="w-4 h-4 mr-2" />
-                Send to WhatsApp
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -293,9 +275,9 @@ export default function CustomerPortal() {
                       {transaction.items.map((item, index) => (
                         <div key={index} className="flex justify-between text-sm">
                           <span>
-                            {item.name} × {item.quantity}
+                            {item.name} × {item.quantity.toString()}
                           </span>
-                          <span>₹{item.total}</span>
+                          <span>₹{item.price * item.quantity}</span>
                         </div>
                       ))}
                     </div>
