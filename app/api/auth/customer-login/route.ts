@@ -1,13 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectToDatabase } from "@/lib/mongodb"
-import { generateToken } from "@/lib/auth"
+import { comparePassword, generateToken } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const { serialNumber } = await request.json()
+    const { serialNumber, password } = await request.json()
 
-    if (!serialNumber) {
-      return NextResponse.json({ error: "Serial number is required" }, { status: 400 })
+    if (!serialNumber || !password) {
+      return NextResponse.json({ error: "Serial number or password is required" }, { status: 400 })
     }
 
     const { db } = await connectToDatabase()
@@ -16,7 +16,12 @@ export async function POST(request: NextRequest) {
     })
 
     if (!customer) {
-      return NextResponse.json({ error: "Invalid serial number" }, { status: 401 })
+      return NextResponse.json({ error: "Invalid serial number or password" }, { status: 401 })
+    }
+
+    const isValidPassword = await comparePassword(password, customer.password)
+    if (!isValidPassword) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     const token = generateToken(
