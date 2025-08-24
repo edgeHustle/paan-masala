@@ -39,12 +39,36 @@ export async function GET(request: NextRequest) {
           },
         ])
         .toArray(),
-      db
-        .collection("transactions")
-        .find({})
-        .sort({ createdAt: -1 })
-        .limit(10)
-        .toArray(),
+      db.collection("transactions")
+        .aggregate([
+          { $sort: { createdAt: -1 } },
+          { $limit: 10 },
+          {
+            $lookup: {
+              from: "customers",
+              localField: "customerId",
+              foreignField: "_id",
+              as: "customer",
+            },
+          },
+          {
+            $addFields: {
+              customer: { $arrayElemAt: ["$customer", 0] },
+            },
+          },
+          {
+            $addFields: {
+              customerName: "$customer.name",
+              customerSerialNumber: "$customer.serialNumber",
+            },
+          },
+          {
+            $project: {
+              customer: 0, // remove expanded object if not needed
+            },
+          },
+        ])
+        .toArray()
     ])
 
     const monthlyRevenue = monthlyTransactions.length > 0 ? monthlyTransactions[0].total : 0
