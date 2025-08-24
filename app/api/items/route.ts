@@ -29,13 +29,13 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const name = formData.get("name") as string
     const price = Number.parseFloat(formData.get("price") as string)
-    const category = formData.get("category") as string
+    // const category = formData.get("category") as string
     const description = formData.get("description") as string
     const isActive = formData.get("isActive") === "true"
     const imageFile = formData.get("image") as File | null
 
-    if (!name || !price || !category) {
-      return NextResponse.json({ error: "Name, price, and category are required" }, { status: 400 })
+    if (!name || !price) {
+      return NextResponse.json({ error: "Name and Price are required" }, { status: 400 })
     }
 
     if (price <= 0) {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const item = {
       name: name.trim(),
       price,
-      category: category.trim(),
+      // category: category.trim(),
       description: description?.trim() || "",
       image: imageUrl,
       isActive,

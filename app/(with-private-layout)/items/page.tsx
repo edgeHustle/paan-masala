@@ -6,8 +6,9 @@ import { Input } from "@/app/components/ui/input"
 import { Card, CardContent } from "@/app/components/ui/card"
 import { Badge } from "@/app/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select"
-import { Search, Plus, Package, Edit, Trash2, Eye, EyeOff } from "lucide-react"
+import { Search, Plus, Package, Edit, Trash2, Eye, EyeOff, MoreVertical } from "lucide-react"
 import Link from "next/link"
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 interface Item {
   _id: string
@@ -27,6 +28,7 @@ export default function ItemsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [filteredItems, setFilteredItems] = useState<Item[]>([])
   const [user, setUser] = useState<any>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
 
   useEffect(() => {
     // Get user info
@@ -44,14 +46,14 @@ export default function ItemsPage() {
     if (searchTerm) {
       filtered = filtered.filter(
         (item) =>
-          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchTerm.toLowerCase()),
+          item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        // item.category.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter((item) => item.category === selectedCategory)
-    }
+    // if (selectedCategory !== "all") {
+    //   filtered = filtered.filter((item) => item.category === selectedCategory)
+    // }
 
     setFilteredItems(filtered)
   }, [items, searchTerm, selectedCategory])
@@ -115,133 +117,109 @@ export default function ItemsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Items Management</h1>
-          <p className="text-muted-foreground">Manage your product inventory</p>
+          <div className="flex gap-4">
+            <p className="text-muted-foreground">Total: {items.length}</p>
+            <p className="text-muted-foreground">Active: {items.filter((item) => item.isActive).length}</p>
+          </div>
         </div>
         {user?.role === "admin" && (
           <Link href="/items/new">
             <Button className="w-full sm:w-auto">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Item
+              <Plus className="h-4 w-4" />
+              Add
             </Button>
           </Link>
         )}
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search items..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Package className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Items</p>
-                <p className="text-2xl font-bold">{items.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Eye className="h-5 w-5 text-secondary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Active Items</p>
-                <p className="text-2xl font-bold">{items.filter((item) => item.isActive).length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Search className="h-5 w-5 text-accent" />
-              <div>
-                <p className="text-sm text-muted-foreground">Filtered</p>
-                <p className="text-2xl font-bold">{filteredItems.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Package className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <p className="text-sm text-muted-foreground">Categories</p>
-                <p className="text-2xl font-bold">{categories.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+          <Input
+            placeholder="Search items..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
       </div>
 
+
       {/* Items Grid */}
-      <div className="space-y-4">
-        {filteredItems.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">{searchTerm ? "No items found" : "No items yet"}</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm ? "Try adjusting your search terms" : "Start by adding your first item"}
-              </p>
-              {!searchTerm && user?.role === "admin" && (
-                <Link href="/items/new">
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add First Item
-                  </Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredItems.map((item) => (
+      <div className="grid max-h-[70vh] overflow-auto grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {filteredItems.map((item) => {
+          const isMenuOpen = openMenuId === item._id;
+
+          return (
+            <div key={item._id} className="relative">
               <Card
-                key={item._id}
-                className={`hover:shadow-md transition-shadow ${!item.isActive ? "opacity-60" : ""}`}
+                className={`hover:shadow-md transition-shadow relative ${!item.isActive ? "opacity-60" : ""} py-0`}
+                onClick={() => {
+                  if (user?.role === "admin") {
+                    setOpenMenuId((prev) => (prev === item._id ? null : item._id));
+                  }
+                }}
               >
-                <CardContent className="p-4">
+                <CardContent className="p-4 relative group">
+                  {/* 3-dots trigger — always visible in corner */}
+                  {user?.role === "admin" && (
+                    <button
+                      className="absolute top-1 right-0 p-1 rounded hover:bg-muted z-20"
+                      onClick={(e) => {
+                        e.stopPropagation(); // prevent card click from firing
+                        setOpenMenuId((prev) => (prev === item._id ? null : item._id));
+                      }}
+                    >
+                      <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                    </button>
+                  )}
+
+                  {/* Dropdown menu */}
+                  {isMenuOpen && (
+                    <div
+                      className="absolute top-6 right-2 min-w-[120px] bg-white border rounded-md shadow-lg p-1 z-50"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Link
+                        href={`/items/${item._id}/edit`}
+                        className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted cursor-pointer"
+                      >
+                        <Edit className="w-4 h-4" /> Edit
+                      </Link>
+
+                      <button
+                        onClick={() => {
+                          toggleItemStatus(item._id, item.isActive);
+                          setOpenMenuId(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted cursor-pointer"
+                      >
+                        {item.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {item.isActive ? "Deactivate" : "Activate"}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          deleteItem(item._id);
+                          setOpenMenuId(null);
+                        }}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" /> Delete
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Card Body */}
                   <div className="space-y-3">
-                    {/* Item Image */}
                     <div className="aspect-square bg-muted rounded-lg overflow-hidden">
                       {item.image ? (
                         <img
-                          src={item.image || "/placeholder.svg"}
+                          src={item.image}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
@@ -252,59 +230,23 @@ export default function ItemsPage() {
                       )}
                     </div>
 
-                    {/* Item Info */}
                     <div className="space-y-2">
                       <div className="flex items-start justify-between">
                         <h3 className="font-semibold text-sm line-clamp-2">{item.name}</h3>
-                        <Badge variant={item.isActive ? "default" : "secondary"} className="ml-2 text-xs">
-                          {item.isActive ? "Active" : "Inactive"}
-                        </Badge>
+                        <p className="text-lg font-bold text-primary">₹{item.price}</p>
                       </div>
-
-                      <p className="text-lg font-bold text-primary">₹{item.price}</p>
-
-                      <Badge variant="outline" className="text-xs">
-                        {item.category}
+                      <Badge variant={item.isActive ? "default" : "secondary"} className="text-xs">
+                        {item.isActive ? "Active" : "Inactive"}
                       </Badge>
-
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">{item.description}</p>
-                      )}
                     </div>
-
-                    {/* Actions */}
-                    {user?.role === "admin" && (
-                      <div className="flex gap-2 pt-2">
-                        <Link href={`/items/${item._id}/edit`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full bg-transparent">
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleItemStatus(item._id, item.isActive)}
-                          className="flex-1"
-                        >
-                          {item.isActive ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => deleteItem(item._id)}
-                          className="flex-1 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+            </div>
+          );
+        })}
       </div>
+
     </div>
   )
 }
