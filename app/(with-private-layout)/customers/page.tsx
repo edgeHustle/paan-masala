@@ -67,33 +67,29 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-row items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Customers</h1>
-          <p className="text-muted-foreground">Manage your customer database</p>
+          <p className="text-muted-foreground">Total: {customers.length}</p>
         </div>
         <Link href="/customers/new">
           <Button className="w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
+            <Plus className="h-4 w-4" />
+            Add
           </Button>
         </Link>
       </div>
 
       {/* Search */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search by name, mobile, or serial number..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Input
+          placeholder="Search by name, mobile, or serial number..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
 
       {/* Customer List */}
       <div className="space-y-4">
@@ -116,11 +112,11 @@ export default function CustomersPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4">
+          <div className="grid gap-4 max-h-[72vh] overflow-auto">
             {filteredCustomers.map((customer) => (
-              <Card key={customer._id} className="hover:shadow-md transition-shadow">
+              <Card key={customer._id} className="hover:shadow-md transition-shadow py-0">
                 <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-center justify-between">
                     <div className="flex-1 space-y-2">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="text-xs">
@@ -133,20 +129,9 @@ export default function CustomersPage() {
                         <Phone className="h-4 w-4" />
                         <span>{customer.mobile}</span>
                       </div>
-
-                      {customer.address && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          <span className="line-clamp-1">{customer.address}</span>
-                        </div>
-                      )}
-
-                      <p className="text-xs text-muted-foreground">
-                        Added: {new Date(customer.createdAt).toLocaleDateString()}
-                      </p>
                     </div>
 
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2">
                       <Link href={`/customers/${customer._id}`}>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4" />
