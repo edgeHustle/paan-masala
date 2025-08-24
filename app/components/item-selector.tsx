@@ -46,14 +46,14 @@ export default function ItemSelector({ onSelectionChange, selectedItems = [] }: 
     if (searchTerm) {
       filtered = filtered.filter(
         (item) =>
-          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.category.toLowerCase().includes(searchTerm.toLowerCase()),
+          item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        // item.category.toLowerCase().includes(searchTerm.toLowerCase()),
       )
     }
 
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter((item) => item.category === selectedCategory)
-    }
+    // if (selectedCategory !== "all") {
+    //   filtered = filtered.filter((item) => item.category === selectedCategory)
+    // }
 
     setFilteredItems(filtered)
   }, [items, searchTerm, selectedCategory])
