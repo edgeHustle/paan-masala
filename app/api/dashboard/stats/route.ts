@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
     // Fetch stats
-    const [totalCustomers, totalItems, todayTransactions, monthlyTransactions] = await Promise.all([
+    const [totalCustomers, totalItems, todayTransactions, monthlyTransactions, recentTransactions] = await Promise.all([
       db.collection("customers").countDocuments(),
       db.collection("items").countDocuments(),
       db.collection("transactions").countDocuments({
@@ -39,6 +39,12 @@ export async function GET(request: NextRequest) {
           },
         ])
         .toArray(),
+      db
+        .collection("transactions")
+        .find({})
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .toArray(),
     ])
 
     const monthlyRevenue = monthlyTransactions.length > 0 ? monthlyTransactions[0].total : 0
@@ -48,6 +54,7 @@ export async function GET(request: NextRequest) {
       totalItems,
       todayTransactions,
       monthlyRevenue,
+      recentTransactions
     })
   } catch (error) {
     console.error("Dashboard stats error:", error)

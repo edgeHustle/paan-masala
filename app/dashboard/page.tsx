@@ -5,12 +5,16 @@ import PrivateLayout from "@/components/layouts/private-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, Package, Receipt, TrendingUp, Plus } from "lucide-react"
 import Link from "next/link"
+import type { Transaction } from "../transactions/page"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 
 interface DashboardStats {
   totalCustomers: number
   totalItems: number
   todayTransactions: number
-  monthlyRevenue: number
+  monthlyRevenue: number,
+  recentTransactions: Transaction[]
 }
 
 export default function DashboardPage() {
@@ -19,18 +23,13 @@ export default function DashboardPage() {
     totalItems: 0,
     todayTransactions: 0,
     monthlyRevenue: 0,
+    recentTransactions: []
   })
-  const [user, setUser] = useState<any>(null)
+  const [transactions, setTransactions] = useState<Transaction[]>([])
 
   useEffect(() => {
-    // Get user info
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      setUser(JSON.parse(userData))
-    }
-
     // Fetch dashboard stats
-    fetchDashboardStats()
+    fetchDashboardStats();
   }, [])
 
   const fetchDashboardStats = async () => {
@@ -130,9 +129,9 @@ export default function DashboardPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {quickActions.map((action) => (
               <Link key={action.title} href={action.href}>
-                <Card className="hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div className="flex items-center space-x-4">
+                <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                  <CardContent className="p-6 h-full items-center">
+                    <div className="flex items-center space-x-4 h-full">
                       <div className={`p-2 rounded-lg ${action.color}`}>
                         <action.icon className="h-6 w-6" />
                       </div>
@@ -154,11 +153,69 @@ export default function DashboardPage() {
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No recent transactions to display</p>
-              <p className="text-sm">Start recording transactions to see activity here</p>
-            </div>
+            {stats.recentTransactions.length <= 0 ?
+              <div className="text-center py-8 text-muted-foreground">
+                <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No recent transactions to display</p>
+                <p className="text-sm">Start recording transactions to see activity here</p>
+              </div>
+              :
+              <div className="space-y-4">
+                {stats.recentTransactions.map((transaction) => (
+                  <Card key={transaction._id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              #{transaction.customerSerialNumber}
+                            </Badge>
+                            <h3 className="font-semibold">{transaction.customerName}</h3>
+                          </div>
+
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground">
+                              {transaction.items.length} item(s) • ₹{transaction.totalAmount.toFixed(2)}
+                            </p>
+                            {transaction.advancePayment && transaction.advancePayment > 0 && (
+                              <p className="text-sm text-green-600">
+                                Advance: ₹{transaction.advancePayment.toFixed(2)} • Remaining: ₹
+                                {transaction.remainingAmount.toFixed(2)}
+                              </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(transaction.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1">
+                            {transaction.items.slice(0, 3).map((item, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {item.name} x{item.quantity}
+                                {item.isCustom && " (Custom)"}
+                              </Badge>
+                            ))}
+                            {transaction.items.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{transaction.items.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <Link href={`/transactions/${transaction._id}`}>
+                            <Button variant="outline" size="sm">
+                              View Details
+                            </Button>
+                          </Link>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            }
           </CardContent>
         </Card>
       </div>

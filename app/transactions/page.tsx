@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, Plus, Receipt } from "lucide-react"
 import Link from "next/link"
 
-interface Transaction {
+export interface Transaction {
   _id: string
   customerId: string
   customerName: string
