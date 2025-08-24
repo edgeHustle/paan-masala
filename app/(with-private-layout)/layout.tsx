@@ -51,7 +51,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
                 className={`fixed inset-y-0 left-0 z-50 w-64 bg-card border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
                     } lg:static lg:inset-0`}
             >
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-screen">
                     {/* Header */}
                     <div className="flex items-center justify-between p-4 border-b">
                         <h1 className="text-lg font-semibold text-primary">Pan Masala Store</h1>
@@ -97,7 +97,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
             {/* Main content */}
             <div className="w-full">
                 {/* Mobile header */}
-                <div className="lg:hidden flex items-center justify-between p-4 border-b bg-card">
+                <div className="lg:hidden sticky top-0 z-40 flex items-center justify-between p-2 border-b bg-card">
                     <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
                         <Menu className="h-4 w-4" />
                     </Button>
@@ -106,7 +106,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
                 </div>
 
                 {/* Page content */}
-                <main className="p-4 lg:p-6">{children}</main>
+                <main className="p-4 lg:p-6 h-screen overflow-y-auto">{children}</main>
             </div>
         </div>
     )

@@ -2,17 +2,28 @@
 
 import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
-import { Users, Package, Receipt, TrendingUp, Plus } from "lucide-react"
+import { Users, Package, Receipt, TrendingUp, Plus, PlusIcon } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/app/components/ui/button"
 import { Badge } from "@/app/components/ui/badge"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
+import { Transaction } from "../transactions/page"
+import { WeeklyTransactionsChart } from "./WeeklyTransactionsChart"
+import { PaidVsPendingChart } from "./PaidVsPendingChart"
+import { TopCustomersChart } from "./TopCustomersChart"
+import { WeeklyRevenueSplitChart } from "./WeeklyRevenueSplitChart"
 
 interface DashboardStats {
   totalCustomers: number
   totalItems: number
   todayTransactions: number
   monthlyRevenue: number,
-  recentTransactions: Transaction[]
+  recentTransactions: Transaction[],
+  weeklyTxnCounts: any[],
+  paidVsPending: any[],
+  topCustomers: any[],
+  weeklyRevenueChart: any[],
 }
 
 export default function DashboardPage() {
@@ -21,9 +32,13 @@ export default function DashboardPage() {
     totalItems: 0,
     todayTransactions: 0,
     monthlyRevenue: 0,
-    recentTransactions: []
+    recentTransactions: [],
+    weeklyTxnCounts: [],
+    paidVsPending: [],
+    topCustomers: [],
+    weeklyRevenueChart: []
   })
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const router = useRouter();
 
   useEffect(() => {
     // Fetch dashboard stats
@@ -66,82 +81,91 @@ export default function DashboardPage() {
     },
   ]
 
+  const cards = [
+    {
+      title: "Total Customers",
+      icon: Users,
+      value: stats.totalCustomers,
+      description: "Active customers in system",
+    },
+    {
+      title: "Items Available",
+      icon: Package,
+      value: stats.totalItems,
+      description: "Products in inventory",
+    },
+    {
+      title: "Today's Transactions",
+      icon: Receipt,
+      value: stats.todayTransactions,
+      description: "Transactions recorded today",
+    },
+    {
+      title: "Monthly Revenue",
+      icon: TrendingUp,
+      value: `₹${stats.monthlyRevenue.toLocaleString()}`,
+      description: "Revenue this month",
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-6 ">
+      <div className="flex justify-between">
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's what's happening with your business today.</p>
-      </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="bg-primary text-white p-2 rounded-full shadow-md hover:bg-primary/90 transition">
+              <PlusIcon className="size-5" />
+            </button>
+          </DropdownMenuTrigger>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-            <p className="text-xs text-muted-foreground">Active customers in system</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Items Available</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalItems}</div>
-            <p className="text-xs text-muted-foreground">Products in inventory</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Transactions</CardTitle>
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.todayTransactions}</div>
-            <p className="text-xs text-muted-foreground">Transactions recorded today</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₹{stats.monthlyRevenue.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Revenue this month</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {quickActions.map((action) => (
-            <Link key={action.title} href={action.href}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                <CardContent className="p-6 h-full items-center">
-                  <div className="flex items-center space-x-4 h-full">
-                    <div className={`p-2 rounded-lg ${action.color}`}>
-                      <action.icon className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold">{action.title}</h3>
-                      <p className="text-sm text-muted-foreground">{action.description}</p>
-                    </div>
+          <DropdownMenuContent className="w-64">
+            {quickActions.map((action, index) => {
+              const Icon = action.icon
+              return (
+                <DropdownMenuItem
+                  key={index}
+                  onClick={() => router.push(action.href)}
+                  className="flex gap-2 items-start"
+                >
+                  <div className={`p-1.5 rounded-md ${action.color}`}>
+                    <Icon className="size-4" />
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
+                  <div>
+                    <p className="text-sm font-medium">{action.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {action.description}
+                    </p>
+                  </div>
+                </DropdownMenuItem>
+              )
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
+        {[...cards].map((card, index) => (
+          <Card key={index} className="flex flex-col justify-between">
+            <CardHeader className="flex flex-row items-center justify-between pb-1 space-y-0">
+              <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
+              <card.icon className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent className="flex flex-col justify-between flex-grow">
+              <div className="text-2xl font-bold">{card.value}</div>
+              <p className="text-xs text-muted-foreground">{card.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Visualization */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <PaidVsPendingChart data={stats.paidVsPending} />
+        <TopCustomersChart data={stats.topCustomers} />
+        <WeeklyRevenueSplitChart data={stats.weeklyRevenueChart} />
+        <WeeklyTransactionsChart data={stats.weeklyTxnCounts} />
       </div>
 
       {/* Recent Activity */}
