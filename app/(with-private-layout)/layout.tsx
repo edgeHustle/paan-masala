@@ -106,7 +106,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
                 </div>
 
                 {/* Page content */}
-                <main className="p-4 lg:p-6 h-screen overflow-y-auto">{children}</main>
+                <main className="p-4 lg:p-6 h-[calc(100vh-56px)] lg:h-screen overflow-y-auto">{children}</main>
             </div>
         </div>
     )
