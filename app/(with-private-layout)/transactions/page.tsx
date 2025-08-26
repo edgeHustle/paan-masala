@@ -7,7 +7,7 @@ import { Input } from "@/app/components/ui/input"
 import { Card, CardContent } from "@/app/components/ui/card"
 import { Badge } from "@/app/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select"
-import { Search, Plus, Receipt } from "lucide-react"
+import { Search, Plus, Receipt, Eye } from "lucide-react"
 import Link from "next/link"
 
 export interface Transaction {
@@ -109,69 +109,49 @@ export default function TransactionsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
-          <p className="text-muted-foreground">Manage customer transactions</p>
-        </div>
+      <div className="flex justify-between items-center gap-4">
+        <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
         <Link href="/transactions/new">
           <Button className="w-full sm:w-auto">
-            <Plus className="mr-2 h-4 w-4" />
-            New Transaction
+            <Plus className="h-4 w-4" /> New
           </Button>
         </Link>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Receipt className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Transactions</p>
-                <p className="text-2xl font-bold">{filteredTransactions.length}</p>
-              </div>
-            </div>
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="flex items-center justify-center py-1">
+          <CardContent className="h-full w-full flex flex-col justify-center items-center p-4 text-center">
+            <Receipt className="h-5 w-5 text-secondary mb-2" />
+            <p className="text-sm text-muted-foreground">Total Amount</p>
+            <p className="text-2xl font-bold">₹{totalAmount.toLocaleString()}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Receipt className="h-5 w-5 text-secondary" />
-              <div>
-                <p className="text-sm text-muted-foreground">Total Amount</p>
-                <p className="text-2xl font-bold">₹{totalAmount.toLocaleString()}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Receipt className="h-5 w-5 text-accent" />
-              <div>
-                <p className="text-sm text-muted-foreground">Advance Payments</p>
-                <p className="text-2xl font-bold">₹{totalAdvance.toLocaleString()}</p>
-              </div>
-            </div>
+        <Card className="flex items-center justify-center py-1">
+          <CardContent className="h-full w-full flex flex-col justify-center items-center p-4 text-center">
+            <Receipt className="h-5 w-5 text-accent mb-2" />
+            <p className="text-sm text-muted-foreground">Advance Payments</p>
+            <p className="text-2xl font-bold">₹{totalAdvance.toLocaleString()}</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-4 space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+      <Card className="py-1">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            {/* Search Input */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search by customer name or serial number..."
+                placeholder="Search name or serial number"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
+
+            {/* Date Filter */}
             <Select value={dateFilter} onValueChange={setDateFilter}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="All Time" />
@@ -186,6 +166,7 @@ export default function TransactionsPage() {
           </div>
         </CardContent>
       </Card>
+
 
       {/* Transactions List */}
       <div className="space-y-4">
@@ -212,55 +193,29 @@ export default function TransactionsPage() {
         ) : (
           <div className="space-y-4">
             {filteredTransactions.map((transaction) => (
-              <Card key={transaction._id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                    <div className="flex-1 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-xs">
-                          #{transaction.customerSerialNumber}
-                        </Badge>
-                        <h3 className="font-semibold">{transaction.customerName}</h3>
-                      </div>
+              <Card key={transaction._id} className="hover:shadow-md transition-shadow relative py-1">
+                <CardContent className="p-4 flex flex-col gap-2 min-h-[110px] justify-center">
+                  <Link
+                    href={`/transactions/${transaction._id}`}
+                    className="absolute right-3 top-3 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </Link>
 
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          {transaction.items.length} item(s) • ₹{transaction.totalAmount.toFixed(2)}
-                        </p>
-                        {transaction.advancePayment && transaction.advancePayment > 0 && (
-                          <p className="text-sm text-green-600">
-                            Advance: ₹{transaction.advancePayment.toFixed(2)} • Remaining: ₹
-                            {transaction.remainingAmount.toFixed(2)}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(transaction.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1">
-                        {transaction.items.slice(0, 3).map((item, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {item.name} x{item.quantity}
-                            {item.isCustom && " (Custom)"}
-                          </Badge>
-                        ))}
-                        {transaction.items.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{transaction.items.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Link href={`/transactions/${transaction._id}`}>
-                        <Button variant="outline" size="sm">
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      #{transaction.customerSerialNumber}
+                    </Badge>
+                    <h3 className="font-medium text-base">{transaction.customerName}</h3>
                   </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(transaction.createdAt).toLocaleString()}
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">
+                    ₹{transaction.totalAmount.toFixed(2)} {transaction.advancePayment ? `• Advance: ₹${(transaction.advancePayment || 0).toFixed(2)}` : ''} • Remaining: ₹{transaction.remainingAmount.toFixed(2)}
+                  </p>
                 </CardContent>
               </Card>
             ))}

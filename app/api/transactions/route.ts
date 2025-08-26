@@ -59,17 +59,17 @@ export async function POST(request: NextRequest) {
     }
 
     const { customerId, items, totalAmount, advancePayment, remainingAmount } = await request.json()
-
-    if (!customerId || !items || items.length === 0 || !totalAmount) {
+    console.log(customerId, totalAmount, ">>>>>>>>>>")
+    if (!customerId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    if (totalAmount <= 0) {
-      return NextResponse.json({ error: "Total amount must be positive" }, { status: 400 })
+    if (!advancePayment && !items.length) {
+      return NextResponse.json({ error: "Add either advance payment or items" }, { status: 400 })
     }
 
-    if (advancePayment && advancePayment > totalAmount) {
-      return NextResponse.json({ error: "Advance payment cannot exceed total amount" }, { status: 400 })
+    if (totalAmount < 0) {
+      return NextResponse.json({ error: "Total amount must be positive" }, { status: 400 })
     }
 
     const db = await getDatabase()
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         isCustom: item.isCustom || false,
       })),
-      totalAmount,
+      totalAmount: totalAmount || 0,
       advancePayment: advancePayment || 0,
       remainingAmount: remainingAmount || totalAmount,
       createdAt: new Date(),
