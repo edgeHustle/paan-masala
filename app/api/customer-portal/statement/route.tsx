@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { connectToDatabase } from "@/app/api/utils/mongodb"
 import { verifyToken } from "@/app/api/utils/auth"
+import puppeteer from "puppeteer"
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,8 +10,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const decoded = verifyToken(token)
-    if (!decoded || decoded.role !== "customer") {
+    const decoded: any = verifyToken(token)
+    if (!decoded || decoded.type !== "customer") {
       return NextResponse.json({ error: "Invalid access" }, { status: 401 })
     }
 
@@ -28,11 +29,11 @@ export async function GET(request: NextRequest) {
     // Get all transactions
     const transactions = await db
       .collection("transactions")
-      .find({ customerId: customer._id.toString() })
+      .find({ customerId: customer._id })
       .sort({ createdAt: -1 })
       .toArray()
 
-    // Generate PDF content (simplified HTML for PDF generation)
+    // Build the HTML for Puppeteer
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
         </head>
         <body>
           <div class="header">
-            <h1>Pan Masala Business</h1>
+            <h1>${process.env.BUSINESS_NAME}</h1>
             <h2>Account Statement</h2>
           </div>
           
@@ -78,9 +79,9 @@ export async function GET(request: NextRequest) {
           (transaction) => `
                 <tr>
                   <td>${new Date(transaction.createdAt).toLocaleDateString()}</td>
-                  <td>${transaction.items.map((item) => `${item.name} (${item.quantity})`).join(", ")}</td>
+                  <td>${transaction.items.map((item: any) => `${item.name} (${item.quantity})`).join(", ")}</td>
                   <td>₹${transaction.totalAmount}</td>
-                  <td>₹${transaction.advanceAmount}</td>
+                  <td>₹${transaction.advancePayment}</td>
                   <td>₹${transaction.remainingAmount}</td>
                 </tr>
               `,
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
               <tr class="total">
                 <td colspan="2"><strong>Total Outstanding</strong></td>
                 <td><strong>₹${transactions.reduce((sum, t) => sum + t.totalAmount, 0)}</strong></td>
-                <td><strong>₹${transactions.reduce((sum, t) => sum + t.advanceAmount, 0)}</strong></td>
+                <td><strong>₹${transactions.reduce((sum, t) => sum + t.advancePayment, 0)}</strong></td>
                 <td><strong>₹${transactions.reduce((sum, t) => sum + t.remainingAmount, 0)}</strong></td>
               </tr>
             </tbody>
@@ -97,12 +98,21 @@ export async function GET(request: NextRequest) {
         </body>
       </html>
     `
+    // Use Puppeteer to generate PDF
+    const browser = await puppeteer.launch({
+      headless: "new" as any, // ✅ required for latest puppeteer
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    })
+    const page = await browser.newPage()
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" })
+    const pdfBuffer: any = await page.pdf({ format: "A4", printBackground: true })
+    await browser.close()
 
-    // For now, return HTML content (in production, you'd use a PDF library like puppeteer)
-    return new NextResponse(htmlContent, {
+    // Return PDF response
+    return new NextResponse(pdfBuffer, {
       headers: {
-        "Content-Type": "text/html",
-        "Content-Disposition": `attachment; filename="statement-${customer.serialNumber}.html"`,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="statement-${customer.serialNumber}.pdf"`,
       },
     })
   } catch (error) {

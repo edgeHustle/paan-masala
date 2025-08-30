@@ -40,6 +40,7 @@ interface Transaction {
   advanceAmount: number
   remainingAmount: number
   createdAt: string
+  advancePayment: number
 }
 
 interface CustomerStats {
@@ -183,7 +184,7 @@ export default function CustomerPortal() {
 
         {/* Account Summary */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center space-x-2">
@@ -215,9 +216,9 @@ export default function CustomerPortal() {
               <CardContent className="p-4">
                 <div className="flex items-center space-x-2">
                   <Clock className="w-4 h-4 text-red-500" />
-                  <span className="text-sm text-gray-600">Outstanding</span>
+                  <span className="text-sm text-gray-600">{stats.outstandingAmount < 0 ? "Balance" : "Outstanding"}</span>
                 </div>
-                <p className="text-2xl font-bold text-red-600 mt-1">₹{stats.outstandingAmount}</p>
+                <p className={`text-2xl font-bold mt-1 ${stats.outstandingAmount < 0 ? "text-green-600" : "text-red-600"}`}>₹{Math.abs(stats.outstandingAmount)}</p>
               </CardContent>
             </Card>
           </div>
@@ -255,17 +256,20 @@ export default function CustomerPortal() {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <p className="font-medium text-gray-900">
-                          {new Date(transaction.createdAt).toLocaleDateString()}
+                          {new Date(transaction.createdAt).toLocaleDateString("in-en")}
                         </p>
                         <p className="text-sm text-gray-600">{transaction.items.length} item(s)</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-lg">₹{transaction.totalAmount}</p>
-                        {transaction.remainingAmount > 0 && (
+                        {/* {transaction.remainingAmount > 0 && (
                           <Badge variant="destructive" className="text-xs">
-                            ₹{transaction.remainingAmount} pending
+                            ₹{transaction.remainingAmount} Pending
                           </Badge>
-                        )}
+                        )} */}
+                        <Badge variant="secondary" className="text-xs">
+                          Paid ₹{Math.abs(transaction.advancePayment)}
+                        </Badge>
                       </div>
                     </div>
 

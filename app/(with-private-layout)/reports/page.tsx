@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/pop
 import { Alert, AlertDescription } from "@/app/components/ui/alert"
 import { FileText, Download, Send, CalendarIcon, TrendingUp, Users, Receipt, Package, Loader2 } from "lucide-react"
 import { format, subDays, subWeeks, subMonths, startOfDay, endOfDay } from "date-fns"
+import { useSearchParams } from "next/navigation"
 
 interface Customer {
   _id: string
@@ -51,10 +52,29 @@ export default function ReportsPage() {
   const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const searchParams = useSearchParams();
+  const customerId = searchParams.get("customerId");
+  const [currentPeriodSelection, setCurrentPeriodSelection] = useState("")
+  const [whatsAppURL, setWhatsAppURL] = useState("")
+
 
   useEffect(() => {
     fetchCustomers()
+    if (customerId) {
+      setSelectedCustomer(customerId)
+    }
   }, [])
+
+  useEffect(() => {
+    setReportData(null)
+  }, [selectedCustomer])
+
+  useEffect(() => {
+    if (reportData) {
+      sendWhatsApp()
+    }
+  }, [reportData])
+
 
   const fetchCustomers = async () => {
     try {
@@ -69,24 +89,30 @@ export default function ReportsPage() {
   }
 
   const setQuickDateRange = (type: string) => {
+    setReportData(null)
     const now = new Date()
     let from: Date
 
     switch (type) {
       case "today":
+        setCurrentPeriodSelection("today")
         from = startOfDay(now)
         break
       case "yesterday":
+        setCurrentPeriodSelection("yesterday")
         from = startOfDay(subDays(now, 1))
         setDateRange({ from, to: endOfDay(subDays(now, 1)) })
         return
       case "week":
+        setCurrentPeriodSelection("week")
         from = subWeeks(now, 1)
         break
       case "month":
+        setCurrentPeriodSelection("month")
         from = subMonths(now, 1)
         break
       case "3months":
+        setCurrentPeriodSelection("3months")
         from = subMonths(now, 3)
         break
       default:
@@ -190,11 +216,12 @@ export default function ReportsPage() {
         }),
       })
 
+      const data = await response.json()
       if (response.ok) {
-        setSuccess("Statement sent to customer's WhatsApp successfully")
+        setWhatsAppURL(data.whatsappURL)
+        // setSuccess("Statement sent to customer's WhatsApp successfully")
       } else {
-        const error = await response.json()
-        setError(error.error || "Failed to send WhatsApp message")
+        setError(data.error || "Failed to send WhatsApp message")
       }
     } catch (error) {
       setError("Error sending WhatsApp message")
@@ -257,19 +284,19 @@ export default function ReportsPage() {
 
             {/* Quick Date Buttons */}
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("today")}>
+              <Button className={currentPeriodSelection === "today" ? "bg-primary text-primary-foreground" : ""} type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("today")} >
                 Today
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("yesterday")}>
+              <Button className={currentPeriodSelection === "yesterday" ? "bg-primary text-primary-foreground" : ""} type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("yesterday")}>
                 Yesterday
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("week")}>
+              <Button className={currentPeriodSelection === "week" ? "bg-primary text-primary-foreground" : ""} type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("week")}>
                 Last Week
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("month")}>
+              <Button className={currentPeriodSelection === "month" ? "bg-primary text-primary-foreground" : ""} type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("month")}>
                 Last Month
               </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("3months")}>
+              <Button className={currentPeriodSelection === "3months" ? "bg-primary text-primary-foreground" : ""} type="button" variant="outline" size="sm" onClick={() => setQuickDateRange("3months")}>
                 Last 3 Months
               </Button>
             </div>
@@ -340,7 +367,7 @@ export default function ReportsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Summary Stats */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 grid-cols-2">
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center space-x-2">
@@ -382,8 +409,8 @@ export default function ReportsPage() {
                   <div className="flex items-center space-x-2">
                     <Users className="h-5 w-5 text-orange-600" />
                     <div>
-                      <p className="text-sm text-muted-foreground">Outstanding</p>
-                      <p className="text-2xl font-bold">₹{reportData.remainingAmount.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground">{reportData.remainingAmount < 0 ? "Balance" : "Outstanding"}</p>
+                      <p className="text-2xl font-bold">₹{Math.abs(reportData.remainingAmount).toLocaleString()}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -397,13 +424,12 @@ export default function ReportsPage() {
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
               </Button>
-              <Button onClick={sendWhatsApp} disabled={isSendingWhatsApp} variant="secondary" className="flex-1">
+              <Button onClick={() => window.open(whatsAppURL, "_blank")} disabled={isSendingWhatsApp} variant="secondary" className="flex-1">
                 {isSendingWhatsApp && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <Send className="mr-2 h-4 w-4" />
                 Send WhatsApp
               </Button>
             </div>
-
             {/* Transaction Details */}
             {reportData.transactions.length > 0 && (
               <div className="space-y-4">

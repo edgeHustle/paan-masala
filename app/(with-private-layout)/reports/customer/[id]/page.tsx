@@ -95,8 +95,11 @@ export default function CustomerReportPage() {
         }),
       })
 
+      const responseJSON = await response.json()
+
       if (response.ok) {
-        alert("Statement sent to customer's WhatsApp successfully!")
+        window.open(responseJSON.whatsappUrl, "_blank")
+        // alert("Statement sent to customer's WhatsApp successfully!")
       }
     } catch (error) {
       console.error("Error sending WhatsApp:", error)

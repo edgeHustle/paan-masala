@@ -6,7 +6,7 @@ import { format } from "date-fns"
 
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
+    const user: any = getUserFromRequest(request)
     if (!user || user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -55,15 +55,17 @@ export async function POST(request: NextRequest) {
 
     // In a real implementation, you would integrate with WhatsApp Business API
     // For now, we'll simulate sending the message
-    console.log("WhatsApp message to", customer.mobile, ":", message)
+    // console.log("WhatsApp message to", customer.mobile, ":", message)
 
     // You could also generate and attach a PDF here
     // const pdfBuffer = await generatePDF(...)
+    const whatsappUrl = `https://wa.me/${customer.mobile.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`
 
     return NextResponse.json({
       success: true,
       message: "Statement sent successfully",
       recipient: customer.mobile,
+      whatsappURL: whatsappUrl
     })
   } catch (error) {
     console.error("Error sending WhatsApp message:", error)
@@ -73,50 +75,33 @@ export async function POST(request: NextRequest) {
 
 function generateWhatsAppMessage({
   customer,
-  transactions,
   dateRange,
   totals,
 }: {
-  customer: any
-  transactions: any[]
-  dateRange: { from: Date; to: Date }
-  totals: { totalAmount: number; totalAdvance: number; remainingAmount: number }
+  customer: any;
+  transactions: any[];
+  dateRange: { from: Date; to: Date };
+  totals: { totalAmount: number; totalAdvance: number; remainingAmount: number };
 }) {
-  const periodText = `${format(dateRange.from, "dd/MM/yyyy")} to ${format(dateRange.to, "dd/MM/yyyy")}`
+  const periodText = `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`;
 
-  let message = `🧾 *Account Statement*\n\n`
-  message += `Dear ${customer.name},\n\n`
-  message += `Here is your account statement for the period:\n`
-  message += `📅 *${periodText}*\n\n`
+  const message = `
+*${process.env.BUSINESS_NAME}*
+*Account Statement*
+📅${periodText}
 
-  message += `📊 *Summary:*\n`
-  message += `• Total Transactions: ${transactions.length}\n`
-  message += `• Total Amount: ₹${totals.totalAmount.toLocaleString()}\n`
-  message += `• Advance Paid: ₹${totals.totalAdvance.toLocaleString()}\n`
+👤 *Customer:* ${customer.name}
+🔢 *Customer ID:* ${customer.serialNumber}
+📱 *Mobile:* ${customer.mobile}
 
-  if (totals.remainingAmount > 0) {
-    message += `• *Outstanding: ₹${totals.remainingAmount.toLocaleString()}*\n\n`
-    message += `⚠️ Please settle the outstanding amount at your earliest convenience.\n\n`
-  } else {
-    message += `• Outstanding: ₹0\n\n`
-    message += `✅ Your account is up to date. Thank you!\n\n`
-  }
 
-  if (transactions.length > 0) {
-    message += `📋 *Recent Transactions:*\n`
-    transactions.slice(0, 5).forEach((transaction) => {
-      const date = format(new Date(transaction.createdAt), "dd/MM")
-      const itemCount = transaction.items.length
-      message += `• ${date}: ${itemCount} item(s) - ₹${transaction.totalAmount.toFixed(2)}\n`
-    })
+💰 *Account Summary:*
+• Total Purchases: ₹${totals.totalAmount}
+• Amount Paid: ₹${totals.totalAdvance}
+• ${totals.remainingAmount < 0 ? "Balance:" : "Outstanding:"} ₹${Math.abs(totals.remainingAmount)}
 
-    if (transactions.length > 5) {
-      message += `... and ${transactions.length - 5} more transactions\n`
-    }
-  }
+Thank you! 🙏
+    `.trim()
 
-  message += `\n📞 For any queries, please contact us.\n`
-  message += `Thank you for your business! 🙏`
-
-  return message
+  return message;
 }

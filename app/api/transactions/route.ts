@@ -5,7 +5,7 @@ import { getUserFromRequest } from "@/app/api/utils/auth"
 
 export async function GET(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
+    const user: any = getUserFromRequest(request)
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
@@ -53,13 +53,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const user = getUserFromRequest(request)
+    const user: any = getUserFromRequest(request)
     if (!user || (user.role !== "admin" && user.role !== "user")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { customerId, items, totalAmount, advancePayment, remainingAmount } = await request.json()
-    console.log(customerId, totalAmount, ">>>>>>>>>>")
     if (!customerId) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
@@ -84,7 +83,7 @@ export async function POST(request: NextRequest) {
     const transaction = {
       customerId: new ObjectId(customerId),
       items: items.map((item: any) => ({
-        itemId: item.itemId ? new ObjectId(item.itemId) : null,
+        itemId: item.itemId.includes("custom") ? new ObjectId() : new ObjectId(item.itemId),
         name: item.name,
         price: item.price,
         quantity: item.quantity,
