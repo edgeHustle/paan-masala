@@ -1,7 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   env: {
-    BUSINESS_NAME: 'Galaxy Pan',
+    BUSINESS_NAME: process.env.BUSINESS_NAME,
+    JWT_SECRET: process.env.JWT_SECRET,
+    MONGODB_URI: process.env.MONGODB_URI,
+    DATABSE_NAME: process.env.DATABSE_NAME,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+    NODE_ENV: process.env.NODE_ENV,
   },
   serverExternalPackages: ['mongodb'],
   eslint: {
