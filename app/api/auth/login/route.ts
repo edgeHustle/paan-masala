@@ -12,13 +12,11 @@ export async function POST(request: NextRequest) {
 
     const { db } = await connectToDatabase()
     const user = await db.collection("users").findOne({ username })
-    console.log(">>>>>>>>>", user, username, password);
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     const isValidPassword = await comparePassword(password, user.password)
-    console.log(">>>>>>>>> in valid password", isValidPassword);
     if (!isValidPassword) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 })
     }
