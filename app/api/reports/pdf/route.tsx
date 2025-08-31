@@ -6,87 +6,87 @@ import { format } from "date-fns";
 import puppeteer from "puppeteer";
 
 export async function GET(request: NextRequest) {
-  try {
-    const user: any = await getUserFromRequest(request);
-    if (!user || user.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    try {
+        const user: any = await getUserFromRequest(request);
+        if (!user || user.role !== "admin") {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const customerId = searchParams.get("customerId");
+        const from = searchParams.get("from");
+        const to = searchParams.get("to");
+
+        if (!customerId || !from || !to) {
+            return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
+        }
+
+        const db = await getDatabase();
+
+        const customer = await db.collection("customers").findOne({ _id: new ObjectId(customerId) });
+        if (!customer) {
+            return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+        }
+
+        const fromDate = new Date(from);
+        const toDate = new Date(to);
+
+        const transactions = await db
+            .collection("transactions")
+            .find({
+                customerId: new ObjectId(customerId),
+                createdAt: {
+                    $gte: fromDate,
+                    $lte: toDate,
+                },
+            })
+            .sort({ createdAt: -1 })
+            .toArray();
+
+        const totalAmount = transactions.reduce((sum, t) => sum + t.totalAmount, 0);
+        const totalAdvance = transactions.reduce((sum, t) => sum + (t.advancePayment || 0), 0);
+        const remainingAmount = transactions.reduce((sum, t) => sum + t.remainingAmount, 0);
+
+        const html = generatePDFHTML({
+            customer,
+            transactions,
+            dateRange: { from: fromDate, to: toDate },
+            totals: { totalAmount, totalAdvance, remainingAmount },
+        });
+
+        // Generate PDF using Puppeteer
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+        await page.setContent(html, { waitUntil: "networkidle0" });
+        const pdfBuffer: any = await page.pdf({ format: "A4" });
+        await browser.close();
+
+        const filename = `statement-${customer.serialNumber}-${format(fromDate, "yyyy-MM-dd")}.pdf`;
+
+        return new NextResponse(pdfBuffer, {
+            headers: {
+                "Content-Type": "application/pdf",
+                "Content-Disposition": `attachment; filename="${filename}"`,
+            },
+        });
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-
-    const { searchParams } = new URL(request.url);
-    const customerId = searchParams.get("customerId");
-    const from = searchParams.get("from");
-    const to = searchParams.get("to");
-
-    if (!customerId || !from || !to) {
-      return NextResponse.json({ error: "Missing required parameters" }, { status: 400 });
-    }
-
-    const db = await getDatabase();
-
-    const customer = await db.collection("customers").findOne({ _id: new ObjectId(customerId) });
-    if (!customer) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
-    }
-
-    const fromDate = new Date(from);
-    const toDate = new Date(to);
-
-    const transactions = await db
-      .collection("transactions")
-      .find({
-        customerId: new ObjectId(customerId),
-        createdAt: {
-          $gte: fromDate,
-          $lte: toDate,
-        },
-      })
-      .sort({ createdAt: -1 })
-      .toArray();
-
-    const totalAmount = transactions.reduce((sum, t) => sum + t.totalAmount, 0);
-    const totalAdvance = transactions.reduce((sum, t) => sum + (t.advancePayment || 0), 0);
-    const remainingAmount = transactions.reduce((sum, t) => sum + t.remainingAmount, 0);
-
-    const html = generatePDFHTML({
-      customer,
-      transactions,
-      dateRange: { from: fromDate, to: toDate },
-      totals: { totalAmount, totalAdvance, remainingAmount },
-    });
-
-    // Generate PDF using Puppeteer
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
-    const pdfBuffer: any = await page.pdf({ format: "A4" });
-    await browser.close();
-
-    const filename = `statement-${customer.serialNumber}-${format(fromDate, "yyyy-MM-dd")}.pdf`;
-
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      },
-    });
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
 }
 
 function generatePDFHTML({
-  customer,
-  transactions,
-  dateRange,
-  totals,
+    customer,
+    transactions,
+    dateRange,
+    totals,
 }: {
-  customer: any;
-  transactions: any[];
-  dateRange: { from: Date; to: Date };
-  totals: { totalAmount: number; totalAdvance: number; remainingAmount: number };
+    customer: any;
+    transactions: any[];
+    dateRange: { from: Date; to: Date };
+    totals: { totalAmount: number; totalAdvance: number; remainingAmount: number };
 }) {
-  return `
+    return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -212,7 +212,7 @@ function generatePDFHTML({
 </head>
 <body>
     <div class="header">
-        <div class="company-name">${process.env.BUSINESS_NAME}</div>
+        <div class="company-name">${process.env.NEXT_PUBLIC_BUSINESS_NAME}</div>
         <div class="statement-title">Customer Statement</div>
     </div>
 
@@ -230,12 +230,12 @@ function generatePDFHTML({
             <span>${customer.mobile}</span>
         </div>
         ${customer.address
-      ? `<div class="info-row">
+            ? `<div class="info-row">
             <strong>Address:</strong>
             <span>${customer.address}</span>
         </div>`
-      : ""
-    }
+            : ""
+        }
         <div class="info-row">
             <strong>Statement Period:</strong>
             <span>${format(dateRange.from, "dd/MM/yyyy")} to ${format(dateRange.to, "dd/MM/yyyy")}</span>
@@ -264,46 +264,46 @@ function generatePDFHTML({
     </div>
 
     ${totals.remainingAmount > 0
-      ? `<div class="outstanding">
+            ? `<div class="outstanding">
         <div>Outstanding Amount</div>
         <div class="outstanding-amount">₹${totals.remainingAmount.toLocaleString()}</div>
     </div>`
-      : ""
-    }
+            : ""
+        }
 
     <div class="transactions">
         <h3>Transaction Details</h3>
         ${transactions
-      .map(
-        (transaction) => `
+            .map(
+                (transaction) => `
             <div class="transaction">
                 <div class="transaction-header">
                     <div class="transaction-date">${format(new Date(transaction.createdAt), "dd/MM/yyyy HH:mm")}</div>
                     <div class="transaction-amount">₹${transaction.totalAmount.toFixed(2)}</div>
                 </div>
                 ${transaction.advancePayment > 0
-            ? `<div style="color: #059669; font-size: 14px; margin-bottom: 8px;">
+                        ? `<div style="color: #059669; font-size: 14px; margin-bottom: 8px;">
                     Advance Payment: ₹${transaction.advancePayment.toFixed(2)} | 
                     Remaining: ₹${transaction.remainingAmount.toFixed(2)}
                 </div>`
-            : ""
-          }
+                        : ""
+                    }
                 <div class="items-list">
                     ${transaction.items
-            .map(
-              (item: any) => `
+                        .map(
+                            (item: any) => `
                         <div class="item">
                             <span>${item.name} x${item.quantity}${item.isCustom ? " (Custom)" : ""}</span>
                             <span>₹${(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                     `
-            )
-            .join("")}
+                        )
+                        .join("")}
                 </div>
             </div>
         `
-      )
-      .join("")}
+            )
+            .join("")}
     </div>
 
     <div class="footer">

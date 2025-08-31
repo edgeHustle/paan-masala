@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     // Create WhatsApp message
     const messageOld = `
-🏪 *${process.env.BUSINESS_NAME} - Account Statement*
+🏪 *${process.env.NEXT_PUBLIC_BUSINESS_NAME} - Account Statement*
 
 👤 *Customer:* ${customer.name}
 🔢 *Serial Number:* ${customer.serialNumber}
@@ -75,7 +75,7 @@ Thank you for your business! 🙏
     `.trim()
 
     const message = `
-🏪 *${process.env.BUSINESS_NAME} - Account Statement*
+🏪 *${process.env.NEXT_PUBLIC_BUSINESS_NAME} - Account Statement*
 
 👤 *Customer:* ${customer.name}
 🔢 *Serial Number:* ${customer.serialNumber}

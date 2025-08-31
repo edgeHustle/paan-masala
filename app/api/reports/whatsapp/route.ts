@@ -86,7 +86,7 @@ function generateWhatsAppMessage({
   const periodText = `${format(dateRange.from, "dd/MM/yyyy")} - ${format(dateRange.to, "dd/MM/yyyy")}`;
 
   const message = `
-*${process.env.BUSINESS_NAME}*
+*${process.env.NEXT_PUBLIC_BUSINESS_NAME}*
 *Account Statement*
 📅${periodText}
 

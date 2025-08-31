@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         </head>
         <body>
           <div class="header">
-            <h1>${process.env.BUSINESS_NAME}</h1>
+            <h1>${process.env.NEXT_PUBLIC_BUSINESS_NAME}</h1>
             <h2>Account Statement</h2>
           </div>
           

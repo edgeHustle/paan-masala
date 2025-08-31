@@ -1,10 +1,10 @@
 import { MongoClient, type Db } from "mongodb"
 
-if (!process.env.MONGODB_URI) {
+if (!process.env.NEXT_PUBLIC_MONGODB_URI) {
   throw new Error("Please add your MongoDB URI to .env")
 }
 
-const uri = process.env.MONGODB_URI
+const uri = process.env.NEXT_PUBLIC_MONGODB_URI
 const options = {}
 
 let client: MongoClient
@@ -27,7 +27,7 @@ if (process.env.NODE_ENV === "development") {
 
 export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   const client = await clientPromise
-  const db = client.db(process.env.DATABASE_NAME)
+  const db = client.db(process.env.NEXT_PUBLIC_DATABASE_NAME)
   return { client, db }
 }
 

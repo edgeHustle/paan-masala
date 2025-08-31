@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       // Upload to Vercel Blob
       const { url } = await put(fileName, buffer, {
         access: "public",
-        token: process.env.BLOB_READ_WRITE_TOKEN,
+        token: process.env.NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN,
       })
 
       imageUrl = url

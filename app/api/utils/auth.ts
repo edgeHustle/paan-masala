@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 import type { NextRequest } from "next/server"
 
-const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-key"
+const NEXT_PUBLIC_JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || "fallback-secret-key"
 
 export interface User {
   _id: string
@@ -20,12 +20,12 @@ export interface Customer {
 }
 
 export function generateToken(payload: User | Customer, type: "staff" | "customer"): string {
-  return jwt.sign({ ...payload, type }, JWT_SECRET, { expiresIn: "7d" })
+  return jwt.sign({ ...payload, type }, NEXT_PUBLIC_JWT_SECRET, { expiresIn: "7d" })
 }
 
 export function verifyToken(token: string): ((User | Customer) & { type: "staff" | "customer" }) | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as (User | Customer) & { type: "staff" | "customer" }
+    return jwt.verify(token, NEXT_PUBLIC_JWT_SECRET) as (User | Customer) & { type: "staff" | "customer" }
   } catch {
     return null
   }

@@ -56,7 +56,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
         <div className="flex flex-col h-screen">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <h1 className="text-lg font-semibold text-primary">{process.env.BUSINESS_NAME}</h1>
+            <h1 className="text-lg font-semibold text-primary">{process.env.NEXT_PUBLIC_BUSINESS_NAME}</h1>
             <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
               <X className="h-4 w-4" />
             </Button>
@@ -133,7 +133,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold text-primary m-auto">{process.env.BUSINESS_NAME}</h1>
+          <h1 className="text-lg font-semibold text-primary m-auto">{process.env.NEXT_PUBLIC_BUSINESS_NAME}</h1>
           <div className="w-8" /> {/* Spacer */}
         </div>
 
