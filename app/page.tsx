@@ -30,7 +30,7 @@ export default function HomePage() {
               <Store className="h-8 w-8 text-white" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-emerald-900">Pan Masala Store</h1>
+          <h1 className="text-3xl font-bold text-emerald-900">{process.env.BUSINESS_NAME}</h1>
           <p className="text-emerald-700">Complete Business Management Solution</p>
         </div>
 

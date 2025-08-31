@@ -55,7 +55,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
         <div className="flex flex-col h-screen">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
-            <h1 className="text-lg font-semibold text-primary">Pan Masala Store</h1>
+            <h1 className="text-lg font-semibold text-primary">{process.env.BUSINESS_NAME}</h1>
             <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setSidebarOpen(false)}>
               <X className="h-4 w-4" />
             </Button>
@@ -95,7 +95,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-1/2 min-w-screen -translate-x-1/2  bg-slate-100 rounded-lg px-2 pt-0 pb-4 flex justify-around gap-2 shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.1)] z-100 shadow-top">
+      <div className="fixed bottom-0 left-1/2 min-w-screen -translate-x-1/2  bg-white rounded-lg px-2 pt-0 pb-4 flex justify-around gap-2 shadow-[0px_-4px_6px_0px_rgba(0,0,0,0.1)] z-100 shadow-top">
         {navigation.map((menu) => (
           <button
             key={menu.id}
@@ -103,7 +103,7 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
             className={`relative flex items-center justify-center w-[50px]  px-2 py-1",
               ${active === menu.id
                 ? "border-primary border-t-4 px-2 py-1 text-primary"
-                : "bg-slate-100  text-gray-500 border-slate-100 border-t-4 px-2 py-1"}
+                : "bg-white  text-gray-500 border-white border-t-4 px-2 py-1"}
             `}
           >
             <Link
@@ -129,12 +129,12 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(true)}>
             <Menu className="h-4 w-4" />
           </Button>
-          <h1 className="text-lg font-semibold text-primary m-auto">Pan Masala Store</h1>
+          <h1 className="text-lg font-semibold text-primary m-auto">{process.env.BUSINESS_NAME}</h1>
           <div className="w-8" /> {/* Spacer */}
         </div>
 
         {/* Page content */}
-        <main className="p-4 lg:p-6 h-[calc(100vh-56px)] lg:h-screen overflow-y-auto">{children}</main>
+        <main className="p-4 min-h-screen overflow-y-auto mb-[60px]">{children}</main>
       </div>
     </div>
   )

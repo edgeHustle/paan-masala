@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     }
 
-    const decoded = verifyToken(token)
+    const decoded: any = verifyToken(token)
     if (!decoded || decoded.role !== "admin") {
       return NextResponse.json({ error: "Invalid access" }, { status: 401 })
     }
@@ -27,21 +27,28 @@ export async function POST(request: NextRequest) {
     }
 
     // Get recent transactions
+    const fromDate = new Date(from)
+    const toDate = new Date(to)
     const transactions = await db
       .collection("transactions")
-      .find({ customerId: customer._id.toString() })
+      .find({
+        customerId: customer._id,
+        createdAt: {
+          $gte: fromDate,
+          $lte: toDate,
+        },
+      })
       .sort({ createdAt: -1 })
-      .limit(10)
       .toArray()
 
     // Calculate totals
     const totalAmount = transactions.reduce((sum, t) => sum + t.totalAmount, 0)
-    const totalAdvance = transactions.reduce((sum, t) => sum + t.advanceAmount, 0)
+    const totalAdvance = transactions.reduce((sum, t) => sum + t.advancePayment, 0)
     const outstandingAmount = transactions.reduce((sum, t) => sum + t.remainingAmount, 0)
 
     // Create WhatsApp message
-    const message = `
-🏪 *Pan Masala Business - Account Statement*
+    const messageOld = `
+🏪 *${process.env.BUSINESS_NAME} - Account Statement*
 
 👤 *Customer:* ${customer.name}
 🔢 *Serial Number:* ${customer.serialNumber}
@@ -67,14 +74,25 @@ ${transactions.length > 5 ? `\n... and ${transactions.length - 5} more transacti
 Thank you for your business! 🙏
     `.trim()
 
+    const message = `
+🏪 *${process.env.BUSINESS_NAME} - Account Statement*
+
+👤 *Customer:* ${customer.name}
+🔢 *Serial Number:* ${customer.serialNumber}
+📱 *Mobile:* ${customer.mobile}
+📅 *Date:* ${new Date().toLocaleDateString()}
+
+💰 *Account Summary:*
+• Total Purchases: ₹${totalAmount}
+• Amount Paid: ₹${totalAdvance}
+• ${outstandingAmount < 0 ? "Balance:" : "Outstanding:"} ₹${Math.abs(outstandingAmount)}
+
+Thank you for your business! 🙏
+    `.trim()
+
     // In production, integrate with WhatsApp Business API
     // For now, we'll create a WhatsApp URL
-    const whatsappUrl = `https://wa.me/${'7575089880'.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`
-
-    console.log("whatsappUrl>>>>", whatsappUrl)
-    // Log the WhatsApp send (in production, actually send via API)
-    console.log("WhatsApp message would be sent to:", customer.mobile)
-    console.log("Message:", message)
+    const whatsappUrl = `https://wa.me/${customer.mobile.replace(/\D/g, "")}?text=${encodeURIComponent(message)}`
 
     return NextResponse.json({
       success: true,

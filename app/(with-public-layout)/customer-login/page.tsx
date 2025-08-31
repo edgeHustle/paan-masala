@@ -136,14 +136,14 @@ export default function CustomerLogin() {
           <div className="mt-8 pt-6 border-t border-gray-200">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-3">Need help?</p>
-              <Button
+              {/* <Button
                 variant="outline"
                 className="w-full bg-transparent"
                 onClick={() => window.open("https://wa.me/1234567890", "_blank")}
               >
                 <Phone className="w-4 h-4 mr-2" />
                 Contact on WhatsApp
-              </Button>
+              </Button> */}
             </div>
           </div>
         </CardContent>

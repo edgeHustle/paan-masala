@@ -128,9 +128,9 @@ export default function CustomerDetailPage() {
                 View All Transactions
               </Button>
             </Link>
-            <Link href={`/reports/customer/${customer._id}`}>
+            <Link href={`/reports?customerId=${customer._id}`}>
               <Button className="w-full bg-transparent" variant="outline">
-                Generate Report
+                Report
               </Button>
             </Link>
           </div>

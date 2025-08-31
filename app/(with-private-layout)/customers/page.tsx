@@ -5,7 +5,7 @@ import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
 import { Card, CardContent } from "@/app/components/ui/card"
 import { Badge } from "@/app/components/ui/badge"
-import { Search, Plus, Phone, MapPin, User, Edit, Eye } from "lucide-react"
+import { Search, Plus, Phone, MapPin, User, Edit, Eye, FileText } from "lucide-react"
 import Link from "next/link"
 
 interface Customer {
@@ -132,6 +132,11 @@ export default function CustomersPage() {
                     </div>
 
                     <div className="flex gap-2">
+                      <Link href={`/reports?customerId=${customer._id}`}>
+                        <Button variant="outline" size="sm">
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <Link href={`/customers/${customer._id}`}>
                         <Button variant="outline" size="sm">
                           <Eye className="h-4 w-4" />

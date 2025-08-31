@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  env: {
+    BUSINESS_NAME: 'Galaxy Pan',
+  },
   serverExternalPackages: ['mongodb'],
   eslint: {
     ignoreDuringBuilds: true,
