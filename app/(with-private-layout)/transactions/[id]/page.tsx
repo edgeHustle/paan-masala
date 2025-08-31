@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import { Badge } from "@/app/components/ui/badge"
-import type { Transaction } from "../page"
+import type { Transaction } from "../Transactions"
 import { Separator } from "@radix-ui/react-separator"
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card"
 
