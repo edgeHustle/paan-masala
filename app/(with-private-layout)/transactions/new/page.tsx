@@ -23,7 +23,7 @@ export default function NewTransactionPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [customer, setCustomer] = useState(null)
+  const [customer, setCustomer] = useState<any>(null)
   const [items, setItems] = useState([])
   const [allItems, setAllItems] = useState([])
   const [error, setError] = useState("")
@@ -59,7 +59,7 @@ export default function NewTransactionPage() {
     } else setCustomer(null)
   }, [customerSerialNumber])
 
-  const fetchCustomerById = async (id) => {
+  const fetchCustomerById = async (id: any) => {
     const res = await fetch(`/api/customers/${id}`)
     if (res.ok) {
       const data = await res.json()
@@ -108,7 +108,7 @@ export default function NewTransactionPage() {
     setLoading(true)
     const payload = {
       customerId: customer._id,
-      items: items.map((i) => ({
+      items: items.map((i: any) => ({
         itemId: i._id,
         name: i.name,
         price: i.price,
@@ -229,8 +229,8 @@ export default function NewTransactionPage() {
           {/* Items list */}
           <div className="mb-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {allItems.map((product) => {
-                const existing = items.find((it) => it._id === product._id)
+              {allItems.map((product: any) => {
+                const existing: any = items.find((it: any) => it._id === product._id)
                 const qty = existing?.quantity || 0
                 return (
                   <div key={product._id} className="border rounded-md p-2 flex flex-col items-center text-center">
@@ -274,7 +274,7 @@ export default function NewTransactionPage() {
       {/* Bottom Floating Summary */}
       <Drawer>
         <DrawerTrigger asChild>
-          <div className="fixed bottom-0 left-0 right-0 z-10 p-4 bg-white dark:bg-background border-t flex justify-between items-center text-sm cursor-pointer">
+          <div className="fixed bottom-[70px] lg:bottom-0 left-0 right-0 z-10 p-4 bg-white dark:bg-background border-t flex justify-between items-center text-sm cursor-pointer">
             <span className="font-medium">{items.length} items</span>
             <span className="font-medium">₹{totalAmount.toFixed(2)}</span>
             <ChevronUp className="h-5 w-5" />
@@ -286,9 +286,33 @@ export default function NewTransactionPage() {
           {/* Scrollable Items List */}
           <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
             {items.map((i: any) => (
-              <div key={i._id} className="flex justify-between text-sm">
-                <span>{i.name} × {i.quantity}</span>
-                <span>₹{i.price * i.quantity}</span>
+              <div
+                key={i._id}
+                className="flex justify-between items-center text-sm border rounded-md px-3 py-2"
+              >
+                <div className="flex-1">
+                  <p className="font-medium">{i.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    ₹{i.price} × {i.quantity} = ₹{i.price * i.quantity}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleItemChange(i, -1)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="min-w-[20px] text-sm">{i.quantity}</span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleItemChange(i, 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
