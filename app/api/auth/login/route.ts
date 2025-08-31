@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { db } = await connectToDatabase()
-    console.log(">>>>>>>>>>db", process.env.NEXT_PUBLIC_DATABASE_NAME, process.env.NEXT_PUBLIC_MONGODB_URI)
     const user = await db.collection("users").findOne({ username })
     if (!user) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })

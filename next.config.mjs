@@ -6,7 +6,7 @@ const nextConfig = {
     NEXT_PUBLIC_BUSINESS_NAME: process.env.BUSINESS_NAME,
     NEXT_PUBLIC_JWT_SECRET: process.env.JWT_SECRET,
     NEXT_PUBLIC_MONGODB_URI: process.env.MONGODB_URI,
-    NEXT_PUBLIC_DATABSE_NAME: process.env.DATABASE_NAME,
+    NEXT_PUBLIC_DATABASE_NAME: process.env.DATABASE_NAME,
     NEXT_PUBLIC_BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
   },
   serverExternalPackages: ['mongodb'],
