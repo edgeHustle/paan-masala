@@ -5,6 +5,9 @@ import { useParams } from "next/navigation"
 import { Badge } from "@/app/components/ui/badge"
 import type { Transaction } from "../Transactions"
 import { Separator } from "@radix-ui/react-separator"
+import { Button } from "@/app/components/ui/button"
+import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
 import { Card, CardContent, CardHeader } from "@/app/components/ui/card"
 
 export default function TransactionsPage() {
@@ -44,6 +47,14 @@ export default function TransactionsPage() {
 
     return (
         <div className="space-y-6">
+            <div className="flex items-center gap-4 mb-4">
+                <Link href="/transactions">
+                    <Button variant="outline" size="sm">
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                </Link>
+                <h1 className="text-xl font-semibold">Transactions List</h1>
+            </div>
             {/* Transactions List */}
             <div className="space-y-4">
                 <div className="space-y-4">
