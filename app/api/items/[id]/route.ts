@@ -59,6 +59,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
 
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
   try {
+    const { id } = await params
     const user = getUserFromRequest(request)
     if (!user || user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -68,7 +69,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     // Check if item is used in transactions
     const transactionCount = await db.collection("transactions").countDocuments({
-      "items.itemId": new ObjectId(params.id),
+      "items.itemId": new ObjectId(id),
     })
 
     if (transactionCount > 0) {
@@ -81,7 +82,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     const result = await db.collection("items").deleteOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
     })
 
     if (result.deletedCount === 0) {
