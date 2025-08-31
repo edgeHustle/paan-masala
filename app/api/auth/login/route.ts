@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     const isValidPassword = await comparePassword(password, user.password)
     if (!isValidPassword) {
-      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+      return NextResponse.json({ error: "Invalid password" }, { status: 401 })
     }
 
     const token = generateToken(
