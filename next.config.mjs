@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+
+console.log(">>>>>>>>>>>> envs", process.env.DATABASE_NAME, process.env.BUSINESS_NAME)
 const nextConfig = {
   env: {
     NEXT_PUBLIC_BUSINESS_NAME: process.env.BUSINESS_NAME,
