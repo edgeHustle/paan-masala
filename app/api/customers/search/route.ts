@@ -10,26 +10,22 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const serialNumber = searchParams.get("serialNumber")
-    const name = searchParams.get("name")
-    const mobile = searchParams.get("mobile")
+    const value = searchParams.get("query")
 
-    if (!serialNumber && !name && !mobile) {
+    if (!value) {
       return NextResponse.json({ error: "Search parameter required" }, { status: 400 })
     }
 
     const db = await getDatabase()
-    const query: any = {}
-
-    if (serialNumber) {
-      query.serialNumber = Number.parseInt(serialNumber)
-    } else if (name) {
-      query.name = { $regex: name, $options: "i" }
-    } else if (mobile) {
-      query.mobile = mobile
+    const query: any = {
+      $or: [
+        { name: { $regex: value, $options: "i" } },
+        { mobile: { $regex: value, $options: "i" } },
+        { serialNumber: Number.parseInt(value) },
+      ],
     }
 
-    const customer = await db.collection("customers").findOne(query)
+    const customer = await db.collection("customers").find(query).toArray()
 
     if (!customer) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })

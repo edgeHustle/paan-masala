@@ -80,7 +80,7 @@ export default function TransactionsPage() {
     fetchAllItems()
   }, [])
 
-    useEffect(() => {
+  useEffect(() => {
     fetchTransactions()
   }, [])
 
@@ -171,9 +171,18 @@ export default function TransactionsPage() {
     }
   }
 
-  const handleItemChange = (item: any, diff: any) => {
+  const handleItemChange = (item: any, diff: any, isInput = false) => {
     const existing: any = items.find((i: any) => i._id === item._id)
     if (existing) {
+      if (isInput) {
+        // Input field changed, update quantity
+        if (!diff) {
+          setItems(items.filter((i: any) => i._id !== item._id))
+          return
+        }
+        setItems(items.map((i: any) => (i._id === item._id ? { ...i, quantity: diff } : i)) as any)
+        return
+      }
       const updatedQty = existing.quantity + diff
       if (updatedQty <= 0) {
         setItems(items.filter((i: any) => i._id !== item._id))
@@ -208,7 +217,13 @@ export default function TransactionsPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
-    if (res.ok) router.push("/transactions")
+    if (res.ok) {
+      // router.push("/transactions")
+      setCustomer(null)
+      setItems([])
+      fetchTransactions()
+      setSearchValue("")
+    }
     else setError((await res.json()).error || "Failed")
     setLoading(false)
   }
@@ -227,7 +242,7 @@ export default function TransactionsPage() {
       <div className="flex justify-between items-center gap-4">
         <div>
           <h1 className="text-xl font-bold text-foreground">Transactions</h1>
-          <p className="text-muted-foreground mt-0">Manage customer orders and payments</p>
+          {/* <p className="text-muted-foreground mt-0">Manage customer orders and payments</p> */}
         </div>
         {/* <Link href="/transactions/new">
           <Button className="w-full sm:w-auto shadow-md hover:shadow-lg transition-shadow">
@@ -242,108 +257,109 @@ export default function TransactionsPage() {
         </Alert>
       )}
 
+
+      <div className="space-y-4">
+        <div className="relative">
+          <div className="border-1 rounded-md transition-colors shadow-sm">
+            <Command shouldFilter={false}>
+              <CommandInput
+                placeholder="Find customer by Serial | Name | Mobile"
+                onValueChange={(value) => {
+                  setSearchValue(value)
+                  searchCustomers(value)
+                  setCustomer(null)
+                  setItems([])
+                }}
+                className="pl-0 focus:ring-0 h-12"
+              />
+              <CommandList className="max-h-60 overflow-y-auto">
+                {searching && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-muted-foreground">Searching customers...</span>
+                  </div>
+                )}
+                {!searching && customerOptions.length === 0 && searchValue.length != 0 && (
+                  <CommandEmpty className="py-6">
+                    <div className="text-center">
+                      <UserCheck className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                      <p className="text-sm text-muted-foreground">No customers found</p>
+                    </div>
+                  </CommandEmpty>
+                )}
+                {!searching && customerOptions.length > 0 && (
+                  <CommandGroup heading="" className="p-2">
+                    {customerOptions.map((cust) => (
+                      <CommandItem
+                        key={cust._id}
+                        onSelect={() => {
+                          setCustomer(cust)
+                          setSearchValue("")
+                          setCustomerOptions([])
+                        }}
+                        className="data-[selected=true]:bg-[#f0f2f5] cursor-pointer rounded-md p-3 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <Badge variant="outline" className="border-primary/20">
+                            #{cust.serialNumber}
+                          </Badge>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-700">{cust.name}</p>
+                            <p className="text-xs text-muted-foreground">{cust.mobile}</p>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </CommandList>
+            </Command>
+          </div>
+        </div>
+
+        {errors.customerSerialNumber && (
+          <p className="text-sm text-destructive font-medium flex items-center gap-2">
+            <span className="w-1 h-1 bg-destructive rounded-full"></span>
+            {errors.customerSerialNumber.message}
+          </p>
+        )}
+
+        {customer && (
+          <div className="p-4 border-1 border-primary rounded-md shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2  rounded-full">
+                <UserCheck className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="default">
+                    #{customer.serialNumber}
+                  </Badge>
+                  <span className="font-semibold text-primary">{customer.name}</span>
+                </div>
+                <p className="text-sm text-green-700 dark:text-green-700">Mobile: {customer.mobile}</p>
+              </div>
+              <Badge>
+                Selected
+              </Badge>
+            </div>
+          </div>
+        )}
+      </div>
       {/* Enhanced Find Customer Section */}
-      <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 shadow-lg py-0">
+      {/* <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 shadow-lg py-0">
         <CardContent className="p-4">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-primary/10 rounded-lg">
+            <div className="p-2 bg-primary/10 rounded-md">
               <UserCheck className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Find Customer to Record Transaction</h2>
+              <h2 className="text-sm font-semibold text-foreground">Find Customer to Record Transaction</h2>
               <p className="text-sm text-muted-foreground">Search by serial number or customer name</p>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <div className="relative">
-              <div className="border-2 rounded-lg focus-within:border-primary/50 transition-colors bg-background/50 backdrop-blur-sm">
-                <Command shouldFilter={false}>
-                  <CommandInput
-                    placeholder="Type serial number or customer name..."
-                    onValueChange={(value) => {
-                      setSearchValue(value)
-                      searchCustomers(value)
-                      setCustomer(null)
-                    }}
-                    className="pl-0 border-none focus:ring-0 h-12"
-                  />
-                  <CommandList className="max-h-60 overflow-y-auto">
-                    {searching && (
-                      <div className="flex items-center justify-center py-6">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        <span className="text-sm text-muted-foreground">Searching customers...</span>
-                      </div>
-                    )}
-                    {!searching && customerOptions.length === 0 && searchValue.length != 0 && (
-                      <CommandEmpty className="py-6">
-                        <div className="text-center">
-                          <UserCheck className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
-                          <p className="text-sm text-muted-foreground">No customers found</p>
-                        </div>
-                      </CommandEmpty>
-                    )}
-                    {!searching && customerOptions.length > 0 && (
-                      <CommandGroup heading="Search Results" className="p-2">
-                        {customerOptions.map((cust) => (
-                          <CommandItem
-                            key={cust._id}
-                            onSelect={() => {
-                              setCustomer(cust)
-                              setSearchValue("")
-                              setCustomerOptions([])
-                            }}
-                            className="cursor-pointer hover:bg-primary/5 rounded-md p-3 transition-colors"
-                          >
-                            <div className="flex items-center gap-3 w-full">
-                              <Badge variant="outline" className="bg-primary/10 border-primary/20">
-                                #{cust.serialNumber}
-                              </Badge>
-                              <div className="flex-1">
-                                <p className="font-medium">{cust.name}</p>
-                                <p className="text-xs text-muted-foreground">{cust.mobile}</p>
-                              </div>
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    )}
-                  </CommandList>
-                </Command>
-              </div>
-            </div>
-
-            {errors.customerSerialNumber && (
-              <p className="text-sm text-destructive font-medium flex items-center gap-2">
-                <span className="w-1 h-1 bg-destructive rounded-full"></span>
-                {errors.customerSerialNumber.message}
-              </p>
-            )}
-
-            {customer && (
-              <div className="p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800 rounded-lg shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-full">
-                    <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant="secondary" className="bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-200 border-green-200 dark:border-green-800">
-                        #{customer.serialNumber}
-                      </Badge>
-                      <span className="font-semibold text-green-900 dark:text-green-100">{customer.name}</span>
-                    </div>
-                    <p className="text-sm text-green-700 dark:text-green-300">Mobile: {customer.mobile}</p>
-                  </div>
-                  <Badge className="bg-green-600 hover:bg-green-700 text-white">
-                    Selected
-                  </Badge>
-                </div>
-              </div>
-            )}
-          </div>
         </CardContent>
-      </Card>
+      </Card> */}
 
       {customer && (
         <>
@@ -420,32 +436,40 @@ export default function TransactionsPage() {
                 const existing: any = items.find((it: any) => it._id === product._id)
                 const qty = existing?.quantity || 0
                 return (
-                  <div key={product._id} className="border rounded-lg p-3 flex flex-col items-center text-center hover:shadow-md transition-all duration-200 bg-card">
-                    <Image
-                      src={product.image || "/placeholder.png"}
-                      alt={product.name}
-                      width={48}
-                      height={48}
-                      className="rounded object-cover"
-                    />
+                  <div key={product._id} className="border rounded-md p-3 flex flex-col items-center text-center hover:shadow-md transition-all duration-200 bg-card">
+                    <div className="h-[48px] w-[48px]">
+                      <Image
+                        src={product.image || "/placeholder.svg"}
+                        alt={product.name}
+                        width={48}
+                        height={48}
+                        className="rounded object-cover"
+                      />
+                    </div>
                     <h4 className="font-medium text-sm mt-2">{product.name}</h4>
                     <p className="text-sm font-semibold text-primary">₹{product.price}</p>
 
                     {qty === 0 ? (
                       <Button
                         size="sm"
-                        className="mt-2 w-full"
+                        className="mt-2 w-full h-9"
                         onClick={() => handleItemChange(product, 1)}
                       >
                         Add
                       </Button>
                     ) : (
-                      <div className="mt-2 flex items-center gap-1 bg-primary/5 rounded-lg p-1">
-                        <Button size="icon" variant="ghost" onClick={() => handleItemChange(product, -1)} className="h-8 w-8">
+                      <div className="mt-2 flex items-center gap-1 bg-primary/10 rounded-md p-1">
+                        <Button size="icon" variant="ghost" onClick={() => handleItemChange(product, -1)} className="h-4 w-8">
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="min-w-[24px] text-sm font-medium bg-background rounded px-2 py-1">{qty}</span>
-                        <Button size="icon" variant="ghost" onClick={() => handleItemChange(product, 1)} className="h-8 w-8">
+                        <Input
+                          type="number"
+                          value={qty}
+                          min={1}
+                          onChange={(e) => handleItemChange(product, Number(e.target.value), true)}
+                          className="w-[40px] text-sm font-medium bg-background rounded px-2"
+                        />
+                        <Button size="icon" variant="ghost" onClick={() => handleItemChange(product, 1)} className="h-4 w-8">
                           <Plus className="h-4 w-4" />
                         </Button>
                       </div>
@@ -460,13 +484,19 @@ export default function TransactionsPage() {
 
       {/* Bottom Floating Summary */}
       {customer && <Drawer>
-        <DrawerTrigger asChild>
-          <div className="fixed bottom-[70px] lg:bottom-0 left-0 right-0 z-10 p-4 bg-white dark:bg-background border-t-2 border-primary/20 flex justify-between items-center text-sm cursor-pointer shadow-lg backdrop-blur-sm bg-white/95 dark:bg-background/95">
+        <div className="fixed bottom-[70px] lg:bottom-0 left-0 right-0 z-10 p-4 bg-white dark:bg-background border-t-2 border-primary/20 flex justify-between items-center text-sm cursor-pointer shadow-lg backdrop-blur-sm bg-white/95 dark:bg-background/95">
+          <Button variant={"outline"} onClick={onSubmit} disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Record
+          </Button>
+          <div className="flex items-center gap-2">
             <span className="font-medium">{items.length} items</span>
             <span className="font-bold text-lg text-primary">₹{totalAmount.toFixed(2)}</span>
-            <ChevronUp className="h-5 w-5 text-primary" />
           </div>
-        </DrawerTrigger>
+          <DrawerTrigger asChild>
+            <ChevronUp className="h-5 w-5 text-primary" />
+          </DrawerTrigger>
+        </div>
         <DrawerContent className="p-0 flex flex-col h-[90vh]">
           <DrawerTitle className="px-4 pt-2">Transaction Summary</DrawerTitle>
 
@@ -532,15 +562,15 @@ export default function TransactionsPage() {
 
       {/* Recent Transactions Section */}
       {!customer && (
-        <div className="space-y-6">
+        <div className="space-y-2">
           {/* Recent Transactions Header */}
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-secondary/10 rounded-lg">
-              <Clock className="h-5 w-5 text-secondary" />
+            <div className="p-2 bg-secondary/10 rounded-md">
+              <Clock className="h-4 w-4 text-secondary" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Recent Transactions</h2>
-              <p className="text-sm text-muted-foreground">View and manage your transaction history</p>
+              <span className="text-md font-semibold text-foreground">Recent Transactions</span>
+              {/* <p className="text-sm text-muted-foreground">View and manage your transaction history</p> */}
             </div>
           </div>
 
@@ -569,32 +599,36 @@ export default function TransactionsPage() {
             ) : (
               <div className="space-y-4">
                 {filteredTransactions.map((transaction) => (
-                  <Card key={transaction._id} className="hover:shadow-md transition-shadow relative py-1">
+                  <Card key={transaction._id} onClick={() => router.push(`/transactions/${transaction._id}`)} className="hover:shadow-md transition-shadow relative py-1">
                     <CardContent className="p-2 flex flex-col gap-2 justify-center">
-                      <Link
+                      {/* <Link
                         href={`/transactions/${transaction._id}`}
                         className="absolute right-3 top-3 text-muted-foreground hover:text-primary transition-colors"
                       >
                         <Eye className="w-5 h-5" />
-                      </Link>
+                      </Link> */}
 
                       <div className="flex items-center gap-2">
-                        <div className="text-xs">
+                        <Badge variant={"outline"} className="text-xs">
                           #{transaction.customerSerialNumber}
-                        </div>
+                        </Badge>
                         <h3 className="font-medium text-base">{transaction.customerName}</h3>
-                        <span className="text-sm text-muted-foreground">  ₹{transaction.totalAmount} {transaction.advancePayment ? `• paid: ₹${(transaction.advancePayment || 0)}` : ''} </span>
+                        <Badge className="px-[4px] pt-[1px] rounded-sm  text-xs ml-auto">  ₹{transaction.totalAmount} </Badge>
+                        {/* <span className="text-xs">{transaction.advancePayment ? `• Paid: ₹${(transaction.advancePayment || 0)}` : ''}</span> */}
                       </div>
 
-                      {/* <div className="text-sm text-muted-foreground">
-                        {new Date(transaction.createdAt).toLocaleString()}
-                      </div> */}
+                      <div className="text-sm text-muted-foreground flex items-center justify-between">
+                        <div>
+                          {/* {new Date(transaction.createdAt).toLocaleString()} */}
+                          {new Intl.DateTimeFormat("en-in", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(transaction.createdAt))}
 
-                      {/* <p className="text-sm text-muted-foreground">
-                        ₹{transaction.totalAmount.toFixed(2)} {transaction.advancePayment ? `• paid: ₹${(transaction.advancePayment || 0).toFixed(2)}` : ''}  */}
-                        {/* • Remaining: ₹{transaction.remainingAmount.toFixed(2) */}
-                        {/* } */}
-                      {/* </p> */}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="text-red-800 font-semibold">Paid: ₹{transaction.advancePayment || 0}</span>
+                          {/* {transaction.advancePayment ? `` : ''} */}
+                        </p>
+                      </div>
+
                     </CardContent>
                   </Card>
                 ))}
