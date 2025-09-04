@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/app/components/ui/alert"
 import { ArrowLeft, Loader2, Plus, Minus, Eye, ChevronUp } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { Command, CommandInput, CommandItem, CommandList, CommandEmpty, CommandGroup } from "@/app/components/ui/command"
 
 const schema = yup.object({
   customerSerialNumber: yup.number().required("Required").positive("Invalid"),
@@ -29,9 +30,11 @@ export default function NewTransactionPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [searching, setSearching] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
   const [customName, setCustomName] = useState("")
   const [customPrice, setCustomPrice] = useState(0)
   const [customQty, setCustomQty] = useState(1)
+  const [customerOptions, setCustomerOptions] = useState<any[]>([])
 
   const {
     register,
@@ -41,7 +44,7 @@ export default function NewTransactionPage() {
     formState: { errors },
   } = useForm({ resolver: yupResolver(schema) })
 
-  const customerSerialNumber = watch("customerSerialNumber")
+  // const customerSerialNumber = watch("customerSerialNumber")
   const advancePayment = watch("advancePayment") || 0
   const totalAmount = items.reduce((sum, i: any) => sum + i.price * i.quantity, 0) || 0;
   const remainingAmount = totalAmount - advancePayment
@@ -52,12 +55,12 @@ export default function NewTransactionPage() {
     fetchAllItems()
   }, [])
 
-  useEffect(() => {
-    if (customerSerialNumber && customerSerialNumber > 0) {
-      const timeout = setTimeout(() => searchCustomer(customerSerialNumber), 500)
-      return () => clearTimeout(timeout)
-    } else setCustomer(null)
-  }, [customerSerialNumber])
+  // useEffect(() => {
+  //   if (customerSerialNumber && customerSerialNumber > 0) {
+  //     const timeout = setTimeout(() => searchCustomer(customerSerialNumber), 500)
+  //     return () => clearTimeout(timeout)
+  //   } else setCustomer(null)
+  // }, [customerSerialNumber])
 
   const fetchCustomerById = async (id: any) => {
     const res = await fetch(`/api/customers/${id}`)
@@ -68,13 +71,29 @@ export default function NewTransactionPage() {
     }
   }
 
-  const searchCustomer = async (serial: any) => {
+  // const searchCustomer = async (serial: any) => {
+  //   setSearching(true)
+  //   const res = await fetch(`/api/customers/search?serialNumber=${serial}`)
+  //   if (res.ok) setCustomer(await res.json())
+  //   else {
+  //     setCustomer(null)
+  //     if (res.status === 404) setError("Customer not found")
+  //   }
+  //   setSearching(false)
+  // }
+
+  const searchCustomers = async (query: string) => {
+    if (!query) {
+      setCustomerOptions([])
+      return
+    }
     setSearching(true)
-    const res = await fetch(`/api/customers/search?serialNumber=${serial}`)
-    if (res.ok) setCustomer(await res.json())
-    else {
-      setCustomer(null)
-      if (res.status === 404) setError("Customer not found")
+    const res = await fetch(`/api/customers/search?query=${query}`)
+    if (res.ok) {
+      const data = await res.json()
+      setCustomerOptions(data)
+    } else {
+      setCustomerOptions([])
     }
     setSearching(false)
   }
@@ -148,17 +167,45 @@ export default function NewTransactionPage() {
 
       <div className="space-y-2 mb-6">
         <label className="text-sm font-medium">Customer Serial Number *</label>
-        <div className="relative">
-          <Input
-            type="number"
-            placeholder="Enter serial number"
-            {...register("customerSerialNumber", { valueAsNumber: true })}
-            className={errors.customerSerialNumber ? "border-destructive" : ""}
-          />
-          {searching && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin" />}
+        <div className="border rounded-md">
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Search by serial number or name..."
+              onValueChange={(value) => {
+                setSearchValue(value)
+                searchCustomers(value)
+              }}
+            />
+            <CommandList className="max-h-60 overflow-y-auto">
+              {searching && <CommandEmpty>Searching...</CommandEmpty>}
+              {!searching && customerOptions.length === 0 && searchValue.length != 0 && (
+                <CommandEmpty>No customers found</CommandEmpty>
+              )}
+              {!searching && customerOptions.length > 0 && (
+                <CommandGroup heading="Results">
+                  {customerOptions.map((cust) => (
+                    <CommandItem
+                      key={cust._id}
+                      onSelect={() => {
+                        setCustomer(cust)
+                        setSearchValue("")
+                        setCustomerOptions([])
+                      }}
+                    >
+                      <span className="font-medium">#{cust.serialNumber}</span> - {cust.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+
         </div>
+
         {errors.customerSerialNumber && (
-          <p className="text-sm text-destructive">{errors.customerSerialNumber.message}</p>
+          <p className="text-sm text-destructive">
+            {errors.customerSerialNumber.message}
+          </p>
         )}
 
         {customer && (

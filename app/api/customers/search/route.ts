@@ -27,11 +27,11 @@ export async function GET(request: NextRequest) {
 
     const customer = await db.collection("customers").find(query).toArray()
 
-    if (!customer) {
+    if (!customers || customers.length === 0) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
 
-    return NextResponse.json(customer)
+    return NextResponse.json(customers)
   } catch (error) {
     console.error("Error searching customer:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
