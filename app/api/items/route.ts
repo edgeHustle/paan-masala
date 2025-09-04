@@ -43,9 +43,9 @@ export async function POST(request: NextRequest) {
     const db = await getDatabase()
 
     // Check if item name already exists
-    const existingItem = await db.collection("items").findOne({ name: name.trim() })
+    const existingItem = await db.collection("items").findOne({ name: name.trim(), price: price })
     if (existingItem) {
-      return NextResponse.json({ error: "Item with this name already exists" }, { status: 400 })
+      return NextResponse.json({ error: "Item with this name and price already exists" }, { status: 400 })
     }
 
     // Handle image upload

@@ -1,14 +1,26 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/app/components/ui/button"
 import { Input } from "@/app/components/ui/input"
 import { Card, CardContent } from "@/app/components/ui/card"
 import { Badge } from "@/app/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select"
-import { Search, Plus, Receipt, Eye } from "lucide-react"
+import { Drawer, DrawerContent, DrawerTitle, DrawerTrigger } from "@/app/components/ui/drawer"
+import { Alert, AlertDescription } from "@/app/components/ui/alert"
+import { Search, Plus, Receipt, Eye, Loader2, Minus, ChevronUp, UserCheck, Clock, TrendingUp } from "lucide-react"
+import * as yup from "yup"
+import Image from "next/image"
 import Link from "next/link"
+import { useForm } from "react-hook-form"
+import { yupResolver } from "@hookform/resolvers/yup"
+import { Command, CommandInput, CommandItem, CommandList, CommandEmpty, CommandGroup } from "@/app/components/ui/command"
+
+const schema = yup.object({
+  customerSerialNumber: yup.number().required("Required").positive("Invalid"),
+  advancePayment: yup.number().min(0).default(0).optional(),
+})
 
 export interface Transaction {
   _id: string
@@ -30,12 +42,43 @@ export interface Transaction {
 }
 
 export default function TransactionsPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
+
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [dateFilter, setDateFilter] = useState("all")
   const [isLoading, setIsLoading] = useState(true)
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([])
+  const [customer, setCustomer] = useState<any>(null)
+  const [items, setItems] = useState([])
+  const [allItems, setAllItems] = useState([])
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const [searchValue, setSearchValue] = useState("")
+  const [customName, setCustomName] = useState("")
+  const [customPrice, setCustomPrice] = useState(0)
+  const [customQty, setCustomQty] = useState(1)
+  const [customerOptions, setCustomerOptions] = useState<any[]>([])
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm({ resolver: yupResolver(schema) })
+
+  const advancePayment = watch("advancePayment") || 0
+  const totalAmount = items.reduce((sum, i: any) => sum + i.price * i.quantity, 0) || 0;
+  const remainingAmount = totalAmount - advancePayment
+
+  useEffect(() => {
+    const id = searchParams.get("customer")
+    if (id) fetchCustomerById(id)
+    fetchAllItems()
+  }, [])
 
   useEffect(() => {
     fetchTransactions()
@@ -81,6 +124,15 @@ export default function TransactionsPage() {
     setFilteredTransactions(filtered)
   }, [transactions, searchTerm, dateFilter, searchParams])
 
+  const fetchCustomerById = async (id: any) => {
+    const res = await fetch(`/api/customers/${id}`)
+    if (res.ok) {
+      const data = await res.json()
+      setCustomer(data)
+      setValue("customerSerialNumber", data.serialNumber)
+    }
+  }
+
   const fetchTransactions = async () => {
     try {
       const response = await fetch("/api/transactions")
@@ -95,8 +147,86 @@ export default function TransactionsPage() {
     }
   }
 
-  const totalAmount = filteredTransactions.reduce((sum, transaction) => sum + transaction.totalAmount, 0)
-  const totalAdvance = filteredTransactions.reduce((sum, transaction) => sum + (transaction.advancePayment || 0), 0)
+  const searchCustomers = async (query: string) => {
+    if (!query) {
+      setCustomerOptions([])
+      return
+    }
+    setSearching(true)
+    const res = await fetch(`/api/customers/search?query=${query}`)
+    if (res.ok) {
+      const data = await res.json()
+      setCustomerOptions(data)
+    } else {
+      setCustomerOptions([])
+    }
+    setSearching(false)
+  }
+
+  const fetchAllItems = async () => {
+    const res = await fetch("/api/items")
+    if (res.ok) {
+      const data = await res.json()
+      setAllItems(data)
+    }
+  }
+
+  const handleItemChange = (item: any, diff: any, isInput = false) => {
+    const existing: any = items.find((i: any) => i._id === item._id)
+    if (existing) {
+      if (isInput) {
+        // Input field changed, update quantity
+        if (!diff) {
+          setItems(items.filter((i: any) => i._id !== item._id))
+          return
+        }
+        setItems(items.map((i: any) => (i._id === item._id ? { ...i, quantity: diff } : i)) as any)
+        return
+      }
+      const updatedQty = existing.quantity + diff
+      if (updatedQty <= 0) {
+        setItems(items.filter((i: any) => i._id !== item._id))
+      } else {
+        setItems(items.map((i: any) => (i._id === item._id ? { ...i, quantity: updatedQty } : i)) as any)
+      }
+    } else if (diff > 0) {
+      setItems([...items, { ...item, quantity: 1 }] as any)
+    }
+  }
+
+  const onSubmit = async () => {
+    if (!customer) return setError("Select a customer")
+    if (!items.length && !advancePayment) return setError("Add items or advanced payment")
+
+    setLoading(true)
+    const payload = {
+      customerId: customer._id,
+      items: items.map((i: any) => ({
+        itemId: i._id,
+        name: i.name,
+        price: i.price,
+        quantity: i.quantity,
+        isCustom: false,
+      })),
+      totalAmount,
+      advancePayment,
+      remainingAmount,
+    }
+    const res = await fetch("/api/transactions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+    if (res.ok) {
+      // router.push("/transactions")
+      setCustomer(null)
+      setItems([])
+      fetchTransactions()
+      setSearchValue("")
+    }
+    else setError((await res.json()).error || "Failed")
+    setLoading(false)
+  }
 
   if (isLoading) {
     return (
@@ -107,121 +237,406 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex justify-between items-center gap-4">
-        <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
-        <Link href="/transactions/new">
-          <Button className="w-full sm:w-auto">
-            <Plus className="h-4 w-4" /> New
+        <div>
+          <h1 className="text-xl font-bold text-foreground">Transactions</h1>
+          {/* <p className="text-muted-foreground mt-0">Manage customer orders and payments</p> */}
+        </div>
+        {/* <Link href="/transactions/new">
+          <Button className="w-full sm:w-auto shadow-md hover:shadow-lg transition-shadow">
+            <Plus className="h-4 w-4" /> New Transaction
           </Button>
-        </Link>
+        </Link> */}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="flex items-center justify-center py-1">
-          <CardContent className="h-full w-full flex flex-col justify-center items-center p-4 text-center">
-            <Receipt className="h-5 w-5 text-secondary mb-2" />
-            <p className="text-sm text-muted-foreground">Total Amount</p>
-            <p className="text-2xl font-bold">₹{totalAmount.toLocaleString()}</p>
-          </CardContent>
-        </Card>
-        <Card className="flex items-center justify-center py-1">
-          <CardContent className="h-full w-full flex flex-col justify-center items-center p-4 text-center">
-            <Receipt className="h-5 w-5 text-accent mb-2" />
-            <p className="text-sm text-muted-foreground">Advance Payments</p>
-            <p className="text-2xl font-bold">₹{totalAdvance.toLocaleString()}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card className="py-1">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-            {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search name or serial number"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Date Filter */}
-            <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="All Time" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">Last 7 Days</SelectItem>
-                <SelectItem value="month">Last 30 Days</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {error && (
+        <Alert variant="destructive" className="mb-6 border-red-200 bg-red-50 dark:bg-red-900/20">
+          <AlertDescription className="font-medium">{error}</AlertDescription>
+        </Alert>
+      )}
 
 
-      {/* Transactions List */}
       <div className="space-y-4">
-        {filteredTransactions.length === 0 ? (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Receipt className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">
-                {searchTerm ? "No transactions found" : "No transactions yet"}
-              </h3>
-              <p className="text-muted-foreground mb-4">
-                {searchTerm ? "Try adjusting your search terms" : "Start by recording your first transaction"}
-              </p>
-              {!searchTerm && (
-                <Link href="/transactions/new">
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Record First Transaction
-                  </Button>
-                </Link>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {filteredTransactions.map((transaction) => (
-              <Card key={transaction._id} className="hover:shadow-md transition-shadow relative py-1">
-                <CardContent className="p-4 flex flex-col gap-2 min-h-[110px] justify-center">
-                  <Link
-                    href={`/transactions/${transaction._id}`}
-                    className="absolute right-3 top-3 text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Eye className="w-5 h-5" />
-                  </Link>
-
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      #{transaction.customerSerialNumber}
-                    </Badge>
-                    <h3 className="font-medium text-base">{transaction.customerName}</h3>
+        <div className="relative">
+          <div className="border-1 rounded-md transition-colors shadow-sm">
+            <Command shouldFilter={false}>
+              <CommandInput
+                placeholder="Find customer by Serial | Name | Mobile"
+                onValueChange={(value) => {
+                  setSearchValue(value)
+                  searchCustomers(value)
+                  setCustomer(null)
+                  setItems([])
+                }}
+                className="pl-0 focus:ring-0 h-12"
+              />
+              <CommandList className="max-h-60 overflow-y-auto">
+                {searching && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    <span className="text-sm text-muted-foreground">Searching customers...</span>
                   </div>
+                )}
+                {!searching && customerOptions.length === 0 && searchValue.length != 0 && (
+                  <CommandEmpty className="py-6">
+                    <div className="text-center">
+                      <UserCheck className="h-8 w-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+                      <p className="text-sm text-muted-foreground">No customers found</p>
+                    </div>
+                  </CommandEmpty>
+                )}
+                {!searching && customerOptions.length > 0 && (
+                  <CommandGroup heading="" className="p-2">
+                    {customerOptions.map((cust) => (
+                      <CommandItem
+                        key={cust._id}
+                        onSelect={() => {
+                          setCustomer(cust)
+                          setSearchValue("")
+                          setCustomerOptions([])
+                        }}
+                        className="data-[selected=true]:bg-[#f0f2f5] cursor-pointer rounded-md p-3 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 w-full">
+                          <Badge variant="outline" className="border-primary/20">
+                            #{cust.serialNumber}
+                          </Badge>
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-700">{cust.name}</p>
+                            <p className="text-xs text-muted-foreground">{cust.mobile}</p>
+                          </div>
+                        </div>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                )}
+              </CommandList>
+            </Command>
+          </div>
+        </div>
 
-                  <div className="text-sm text-muted-foreground">
-                    {new Date(transaction.createdAt).toLocaleString()}
-                  </div>
+        {errors.customerSerialNumber && (
+          <p className="text-sm text-destructive font-medium flex items-center gap-2">
+            <span className="w-1 h-1 bg-destructive rounded-full"></span>
+            {errors.customerSerialNumber.message}
+          </p>
+        )}
 
-                  <p className="text-sm text-muted-foreground">
-                    ₹{transaction.totalAmount.toFixed(2)} {transaction.advancePayment ? `• Advance: ₹${(transaction.advancePayment || 0).toFixed(2)}` : ''} • Remaining: ₹{transaction.remainingAmount.toFixed(2)}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+        {customer && (
+          <div className="p-4 border-1 border-primary rounded-md shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2  rounded-full">
+                <UserCheck className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant="default">
+                    #{customer.serialNumber}
+                  </Badge>
+                  <span className="font-semibold text-primary">{customer.name}</span>
+                </div>
+                <p className="text-sm text-green-700 dark:text-green-700">Mobile: {customer.mobile}</p>
+              </div>
+              <Badge>
+                Selected
+              </Badge>
+            </div>
           </div>
         )}
       </div>
+      {/* Enhanced Find Customer Section */}
+      {/* <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 shadow-lg py-0">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-primary/10 rounded-md">
+              <UserCheck className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Find Customer to Record Transaction</h2>
+              <p className="text-sm text-muted-foreground">Search by serial number or customer name</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card> */}
+
+      {customer && (
+        <>
+          {/* Custom Item Entry */}
+          <Card className="border-dashed border-2 border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/10 py-0">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-md">
+                  <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h4 className="font-semibold text-blue-900 dark:text-blue-100">Add Custom Item</h4>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label className="text-xs font-medium text-blue-800 dark:text-blue-200">Item Name</label>
+                  <Input
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    placeholder="e.g. Kurkure"
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-blue-800 dark:text-blue-200">Price (₹)</label>
+                  <Input
+                    type="number"
+                    value={customPrice}
+                    onChange={(e) => setCustomPrice(Number(e.target.value))}
+                    className="border-blue-200 dark:border-blue-800 focus:border-blue-400"
+                  />
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  <Button size="icon" variant="ghost" onClick={() => setCustomQty(q => Math.max(1, q - 1))} className="hover:bg-blue-100 dark:hover:bg-blue-900/40">
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="min-w-[20px] text-sm font-medium">{customQty}</span>
+                  <Button size="icon" variant="ghost" onClick={() => setCustomQty(q => q + 1)} className="hover:bg-blue-100 dark:hover:bg-blue-900/40">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      handleItemChange(
+                        {
+                          _id: `custom-${Date.now()}`,
+                          name: customName,
+                          price: customPrice,
+                          isCustom: true,
+                        },
+                        customQty
+                      )
+                      setCustomName("")
+                      setCustomPrice(0)
+                      setCustomQty(1)
+                    }}
+                    disabled={!customName || !customPrice}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    Add
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Items list */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              <h3 className="text-lg font-semibold">Select Items</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pb-8">
+              {allItems.map((product: any) => {
+                const existing: any = items.find((it: any) => it._id === product._id)
+                const qty = existing?.quantity || 0
+                return (
+                  <div key={product._id} className="border rounded-md p-3 flex flex-col items-center text-center hover:shadow-md transition-all duration-200 bg-card">
+                    <div className="h-[48px] w-[48px]">
+                      <Image
+                        src={product.image || "/placeholder.svg"}
+                        alt={product.name}
+                        width={48}
+                        height={48}
+                        className="rounded object-cover"
+                      />
+                    </div>
+                    <h4 className="font-medium text-sm mt-2">{product.name}</h4>
+                    <p className="text-sm font-semibold text-primary">₹{product.price}</p>
+
+                    {qty === 0 ? (
+                      <Button
+                        size="sm"
+                        className="mt-2 w-full h-9"
+                        onClick={() => handleItemChange(product, 1)}
+                      >
+                        Add
+                      </Button>
+                    ) : (
+                      <div className="mt-2 flex items-center gap-1 bg-primary/10 rounded-md p-1">
+                        <Button size="icon" variant="ghost" onClick={() => handleItemChange(product, -1)} className="h-4 w-8">
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <Input
+                          type="number"
+                          value={qty}
+                          min={1}
+                          onChange={(e) => handleItemChange(product, Number(e.target.value), true)}
+                          className="w-[40px] text-sm font-medium bg-background rounded px-2"
+                        />
+                        <Button size="icon" variant="ghost" onClick={() => handleItemChange(product, 1)} className="h-4 w-8">
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Bottom Floating Summary */}
+      {customer && <Drawer>
+        <div className="fixed bottom-[70px] lg:bottom-0 left-0 right-0 z-10 p-4 bg-white dark:bg-background border-t-2 border-primary/20 flex justify-between items-center text-sm cursor-pointer shadow-lg backdrop-blur-sm bg-white/95 dark:bg-background/95">
+          <Button variant={"outline"} onClick={onSubmit} disabled={loading}>
+            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Record
+          </Button>
+          <div className="flex items-center gap-2">
+            <span className="font-medium">{items.length} items</span>
+            <span className="font-bold text-lg text-primary">₹{totalAmount.toFixed(2)}</span>
+          </div>
+          <DrawerTrigger asChild>
+            <ChevronUp className="h-5 w-5 text-primary" />
+          </DrawerTrigger>
+        </div>
+        <DrawerContent className="p-0 flex flex-col h-[90vh]">
+          <DrawerTitle className="px-4 pt-2">Transaction Summary</DrawerTitle>
+
+          {/* Scrollable Items List */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+            {items.map((i: any) => (
+              <div
+                key={i._id}
+                className="flex justify-between items-center text-sm border rounded-md px-3 py-2"
+              >
+                <div className="flex-1">
+                  <p className="font-medium">{i.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    ₹{i.price} × {i.quantity} = ₹{i.price * i.quantity}
+                  </p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleItemChange(i, -1)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="min-w-[20px] text-sm">{i.quantity}</span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleItemChange(i, 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Static Bottom Summary Bar */}
+          <div className="border-t bg-background p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="text-sm font-medium">
+              <div>Total: ₹{totalAmount.toFixed(2)}</div>
+            </div>
+            <div className="flex justify-between gap-2 w-full sm:w-auto">
+              <div className="flex flex-col text-sm">
+                <label className="font-medium">Advance Paid</label>
+                <Input
+                  type="number"
+                  placeholder="₹ amount paid now"
+                  {...register("advancePayment", { valueAsNumber: true })}
+                  className="w-full sm:w-28"
+                />
+              </div>
+              <div className="flex flex-col h-full justify-end">
+                <Button onClick={onSubmit} disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Record
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>}
+
+      {/* Recent Transactions Section */}
+      {!customer && (
+        <div className="space-y-2">
+          {/* Recent Transactions Header */}
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-secondary/10 rounded-md">
+              <Clock className="h-4 w-4 text-secondary" />
+            </div>
+            <div>
+              <span className="text-md font-semibold text-foreground">Recent Transactions</span>
+              {/* <p className="text-sm text-muted-foreground">View and manage your transaction history</p> */}
+            </div>
+          </div>
+
+          {/* Transactions List */}
+          <div className="space-y-4">
+            {filteredTransactions.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <Receipt className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="text-lg font-semibold mb-2">
+                    {searchTerm ? "No transactions found" : "No transactions yet"}
+                  </h3>
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm ? "Try adjusting your search terms" : "Start by recording your first transaction"}
+                  </p>
+                  {!searchTerm && (
+                    <Link href="/transactions/new">
+                      <Button>
+                        <Plus className="mr-2 h-4 w-4" />
+                        Record First Transaction
+                      </Button>
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-4">
+                {filteredTransactions.map((transaction) => (
+                  <Card key={transaction._id} onClick={() => router.push(`/transactions/${transaction._id}`)} className="hover:shadow-md transition-shadow relative py-1">
+                    <CardContent className="p-2 flex flex-col gap-2 justify-center">
+                      {/* <Link
+                        href={`/transactions/${transaction._id}`}
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        <Eye className="w-5 h-5" />
+                      </Link> */}
+
+                      <div className="flex items-center gap-2">
+                        <Badge variant={"outline"} className="text-xs">
+                          #{transaction.customerSerialNumber}
+                        </Badge>
+                        <h3 className="font-medium text-base">{transaction.customerName}</h3>
+                        <Badge className="px-[4px] pt-[1px] rounded-sm  text-xs ml-auto">  ₹{transaction.totalAmount} </Badge>
+                        {/* <span className="text-xs">{transaction.advancePayment ? `• Paid: ₹${(transaction.advancePayment || 0)}` : ''}</span> */}
+                      </div>
+
+                      <div className="text-sm text-muted-foreground flex items-center justify-between">
+                        <div>
+                          {/* {new Date(transaction.createdAt).toLocaleString()} */}
+                          {new Intl.DateTimeFormat("en-in", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(transaction.createdAt))}
+
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          <span className="text-red-800 font-semibold">Paid: ₹{transaction.advancePayment || 0}</span>
+                          {/* {transaction.advancePayment ? `` : ''} */}
+                        </p>
+                      </div>
+
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
