@@ -10,32 +10,35 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const serialNumber = searchParams.get("serialNumber")
-    const name = searchParams.get("name")
-    const mobile = searchParams.get("mobile")
+    const queryParam = searchParams.get("query") // unified param (serial or name or mobile)
 
-    if (!serialNumber && !name && !mobile) {
+    if (!queryParam) {
       return NextResponse.json({ error: "Search parameter required" }, { status: 400 })
     }
 
     const db = await getDatabase()
-    const query: any = {}
+    const customersCollection = db.collection("customers")
 
-    if (serialNumber) {
-      query.serialNumber = Number.parseInt(serialNumber)
-    } else if (name) {
-      query.name = { $regex: name, $options: "i" }
-    } else if (mobile) {
-      query.mobile = mobile
+    let query: any = {}
+
+    if (!isNaN(Number(queryParam))) {
+      query.serialNumber = Number(queryParam)
+    } else {
+      query = {
+        $or: [
+          { name: { $regex: queryParam, $options: "i" } },
+          { mobile: { $regex: queryParam, $options: "i" } }
+        ]
+      }
     }
 
-    const customer = await db.collection("customers").findOne(query)
+    const customers = await customersCollection.find(query).limit(10).toArray()
 
-    if (!customer) {
+    if (!customers || customers.length === 0) {
       return NextResponse.json({ error: "Customer not found" }, { status: 404 })
     }
 
-    return NextResponse.json(customer)
+    return NextResponse.json(customers)
   } catch (error) {
     console.error("Error searching customer:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
